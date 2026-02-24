@@ -532,9 +532,6 @@ app.post("/api/ai/interview-evaluation", async (req, res) => {
     return res.status(500).json({ error: "Gemini API key not configured" });
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const model = "gemini-2.0-flash";
-
   const prompt = `Evaluate this interview answer for a ${position} role at ${company}.
 
 Question: ${question}
@@ -560,19 +557,35 @@ RESPOND ONLY with valid JSON in this exact format:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      }),
+      signal: controller.signal,
     });
-    
-    const text = response.text;
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const evaluation = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
       score: 70, 
-      strengths: ["Good effort"],
-      improvements: ["Could be more detailed"],
-      detailedFeedback: "Your answer was reasonable.",
-      tips: "Try to add more specific examples."
+      strengths: ["Good effort", "Shows communication"],
+      improvements: ["Add more specifics", "Quantify the impact"],
+      detailedFeedback: "Your answer was reasonable and showed good collaboration.",
+      tips: "Try to add specific metrics and business impact."
     };
     
     res.json(evaluation);
@@ -590,9 +603,6 @@ app.post("/api/ai/company-interview-insights", async (req, res) => {
     return res.status(500).json({ error: "Gemini API key not configured" });
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const model = "gemini-2.0-flash";
-
   const prompt = `Provide interview insights for ${position} role at ${company}.
 
 Include:
@@ -601,7 +611,7 @@ Include:
 3. Top 3-4 skills they value
 4. Interview tips specific to this company/role
 5. Typical timeline
-6. Salary range estimate
+6. Salary range estimate (if possible)
 7. Company culture fit indicators
 
 RESPOND ONLY with valid JSON:
@@ -616,21 +626,37 @@ RESPOND ONLY with valid JSON:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      }),
+      signal: controller.signal,
     });
-    
-    const text = response.text;
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const insights = jsonMatch ? JSON.parse(jsonMatch[0]) : {
-      format: "Typically multi-stage interview process",
-      commonQuestions: ["Tell me about yourself", "Why do you want to join?"],
-      valuedSkills: ["Technical expertise", "Communication", "Problem-solving"],
-      interviewTips: "Research the company well, prepare specific examples.",
-      timeline: "Usually 2-4 weeks from first interview to offer",
-      salaryRange: "Depends on experience level",
-      cultureIndicators: "Innovation, collaboration, growth mindset"
+      format: "Multi-stage interview process (phone screen + 2-3 technical rounds + behavioral)",
+      commonQuestions: ["Tell me about yourself", "Why ${company}?", "Describe a challenging project", "How do you handle disagreements?"],
+      valuedSkills: ["Technical expertise", "Communication", "Problem-solving", "Collaboration"],
+      interviewTips: "Research the company thoroughly, prepare specific examples, ask thoughtful questions about the role and culture",
+      timeline: "2-4 weeks from first interview to offer",
+      salaryRange: "Competitive based on experience level",
+      cultureIndicators: "Innovation, collaboration, user-focused approach, continuous learning"
     };
     
     res.json(insights);
