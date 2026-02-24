@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "node server.ts",
-    "build": "vite build",
+    "build": "npm run install-rollup-linux && vite build",
+    "install-rollup-linux": "npm install --no-save @rollup/rollup-linux-x64-gnu@latest 2>/dev/null || true",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "migrate": "tsx migrate.ts",
-    "postinstall": "npm ls @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu"
+    "postinstall": "npm run install-rollup-linux || true"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.995.0",

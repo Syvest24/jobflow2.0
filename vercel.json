@@ -1,6 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps --force && npm run build",
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "env": {
+    "ROLLUP_WATCH": "false"
+  },
   "builds": [
     {
       "src": "package.json",
