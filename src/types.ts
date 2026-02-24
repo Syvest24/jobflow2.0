@@ -24,6 +24,35 @@ export interface NewJob {
   notes?: string;
 }
 
+export interface Certificate {
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+  credentialUrl?: string;
+}
+
+export interface Experience {
+  id: string;
+  company: string;
+  role: string;
+  description: string;
+  startDate: string;
+  endDate?: string;
+  current?: boolean;
+  technologies?: string[];
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  link?: string;
+  image?: string;
+  featured?: boolean;
+}
+
 export interface Portfolio {
   type: string;
   name: string;
@@ -36,6 +65,9 @@ export interface Portfolio {
   linkedin?: string;
   github?: string;
   location?: string;
+  experience?: Experience[];
+  projects?: Project[];
+  certificates?: Certificate[];
   cvs?: {
     en?: { filename: string; updatedAt: string };
     de?: { filename: string; updatedAt: string };

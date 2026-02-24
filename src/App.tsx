@@ -48,6 +48,7 @@ import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
 import { UnifiedJobDiscovery } from './components/UnifiedJobDiscovery';
 import { RealJobSearch } from './components/RealJobSearch';
+import { EnhancedPortfolio } from './components/EnhancedPortfolio';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
   'Wishlist': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -754,6 +755,39 @@ export default function App() {
               </AnimatePresence>
             </motion.div>
           ) : view === 'portfolio' ? (
+            <motion.div
+              key="portfolio-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <EnhancedPortfolio
+                portfolio={portfolio}
+                isAdmin={isAdmin}
+                isEditingPortfolio={isEditingPortfolioInline}
+                setIsEditingPortfolio={setIsEditingPortfolioInline}
+                editPortfolioData={editPortfolioData}
+                setEditPortfolioData={setEditPortfolioData}
+                onUpdatePortfolio={async (data) => {
+                  try {
+                    const res = await fetch('/api/portfolio', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                      fetchPortfolio();
+                      alert('Portfolio updated successfully!');
+                    }
+                  } catch (err) {
+                    console.error('Failed to update portfolio', err);
+                  }
+                }}
+                onCvUpload={handleCvUpload}
+                onDownloadCv={handleDownloadCv}
+              />
+            </motion.div>
+          ) : view === 'portfolio-old' ? (
             <motion.div
               key="portfolio-view"
               initial={{ opacity: 0, y: 20 }}

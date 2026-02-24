@@ -443,6 +443,198 @@ app.get("/api/portfolio/cv/download/:lang", async (req, res) => {
   }
 });
 
+// Experience endpoints
+app.post("/api/portfolio/experience", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { company, role, description, startDate, endDate, current, technologies } = req.body;
+  try {
+    const experience = {
+      id: new Date().getTime().toString(),
+      company,
+      role,
+      description,
+      startDate,
+      endDate,
+      current: current || false,
+      technologies: technologies || []
+    };
+    
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $push: { experience } },
+      { upsert: true }
+    );
+    res.json({ success: true, experience });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add experience" });
+  }
+});
+
+app.put("/api/portfolio/experience/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main", "experience.id": id },
+      { $set: { "experience.$": req.body } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update experience" });
+  }
+});
+
+app.delete("/api/portfolio/experience/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $pull: { experience: { id } } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete experience" });
+  }
+});
+
+// Projects endpoints
+app.post("/api/portfolio/projects", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { title, description, technologies, link, image, featured } = req.body;
+  try {
+    const project = {
+      id: new Date().getTime().toString(),
+      title,
+      description,
+      technologies: technologies || [],
+      link,
+      image,
+      featured: featured || false
+    };
+    
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $push: { projects: project } },
+      { upsert: true }
+    );
+    res.json({ success: true, project });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add project" });
+  }
+});
+
+app.put("/api/portfolio/projects/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main", "projects.id": id },
+      { $set: { "projects.$": req.body } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update project" });
+  }
+});
+
+app.delete("/api/portfolio/projects/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $pull: { projects: { id } } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete project" });
+  }
+});
+
+// Certificates endpoints
+app.post("/api/portfolio/certificates", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { name, issuer, date, credentialUrl } = req.body;
+  try {
+    const certificate = {
+      id: new Date().getTime().toString(),
+      name,
+      issuer,
+      date,
+      credentialUrl
+    };
+    
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $push: { certificates: certificate } },
+      { upsert: true }
+    );
+    res.json({ success: true, certificate });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add certificate" });
+  }
+});
+
+app.put("/api/portfolio/certificates/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main", "certificates.id": id },
+      { $set: { "certificates.$": req.body } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update certificate" });
+  }
+});
+
+app.delete("/api/portfolio/certificates/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  try {
+    await db.collection("portfolio").updateOne(
+      { type: "main" },
+      { $pull: { certificates: { id } } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete certificate" });
+  }
+});
+
+// Recruiter public portfolio view endpoint
+app.get("/api/portfolio/public/:username", async (req, res) => {
+  if (!db) await connectDB();
+  try {
+    const portfolio = await db.collection("portfolio").findOne({ type: "main" });
+    if (portfolio) {
+      // Remove sensitive data for public view
+      const publicPortfolio = {
+        name: portfolio.name,
+        title: portfolio.title,
+        about: portfolio.about,
+        skills: portfolio.skills,
+        certifications: portfolio.certifications,
+        certificates: portfolio.certificates || [],
+        experience: portfolio.experience || [],
+        projects: portfolio.projects || [],
+        languages: portfolio.languages,
+        email: portfolio.email,
+        linkedin: portfolio.linkedin,
+        github: portfolio.github,
+        location: portfolio.location
+      };
+      res.json(publicPortfolio);
+    } else {
+      res.status(404).json({ error: "Portfolio not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch portfolio" });
+  }
+});
+
 // Gemini AI Route
 app.post("/api/ai/optimize", async (req, res) => {
   const { type, jobDescription, resume } = req.body;
