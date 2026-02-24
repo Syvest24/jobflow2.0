@@ -90,14 +90,29 @@
 }
 
 .card-elevated {
-  @apply bg-white rounded-2xl p-6 shadow-lg;
+  @apply bg-white rounded-2xl p-6 shadow-lg transition-all duration-300;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.card-elevated:hover {
+  @apply shadow-xl;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 /* Button enhancements */
 .btn-primary {
-  @apply bg-gradient-to-b from-indigo-600 to-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl transition-all duration-200;
+  @apply bg-gradient-to-b from-indigo-600 to-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl transition-all duration-200 relative overflow-hidden;
   box-shadow: 0 10px 15px -3px rgba(79, 91, 231, 0.2);
+}
+
+.btn-primary::before {
+  content: '';
+  @apply absolute inset-0 bg-white/0 transition-all duration-200;
+}
+
+.btn-primary:hover::before {
+  @apply bg-white/10;
 }
 
 .btn-primary:hover {
@@ -112,11 +127,29 @@
 }
 
 .btn-secondary {
-  @apply bg-slate-100 text-slate-900 font-bold uppercase tracking-wider rounded-xl transition-all duration-200;
+  @apply bg-slate-100 text-slate-900 font-bold uppercase tracking-wider rounded-xl transition-all duration-200 hover:bg-slate-200 active:scale-95;
 }
 
 .btn-secondary:hover {
   @apply bg-slate-200 text-slate-900;
+}
+
+.btn-secondary:active {
+  @apply scale-95;
+}
+
+/* Icon button animations */
+.icon-btn {
+  @apply relative inline-flex items-center justify-center p-2 transition-all duration-200 rounded-lg;
+}
+
+.icon-btn:hover {
+  @apply bg-slate-100;
+  transform: scale(1.1);
+}
+
+.icon-btn:active {
+  @apply scale-95;
 }
 
 /* Status badges with better contrast */
@@ -176,6 +209,28 @@
   }
 }
 
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -196,20 +251,142 @@
   }
 }
 
-.animate-in-slide-up {
-  animation: slideInUp 0.3s ease-out;
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.animate-in-slide-down {
-  animation: slideInDown 0.3s ease-out;
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-.animate-in-scale {
-  animation: fadeInScale 0.3s ease-out;
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Animation classes */
+.animate-slide-up {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideInDown 0.4s ease-out;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.4s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+/* Transition utilities */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-bounce {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover effects */
+.hover-lift {
+  @apply transition-smooth cursor-pointer;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(79, 91, 231, 0.15);
+}
+
+.hover-glow {
+  @apply transition-smooth cursor-pointer;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(79, 91, 231, 0.3);
+}
+
+.hover-accent {
+  @apply transition-smooth cursor-pointer;
+}
+
+.hover-accent:hover {
+  color: #4f5be7;
+}
+
+/* Focus states */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400;
+}
+
+.focus-ring-inset {
+  @apply focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/50;
+}
+
+/* Smooth transform */
+.smooth-transform {
+  @apply transform transition-transform duration-300 ease-out;
+}
+
+/* Interactive button animations */
+.btn-interactive {
+  @apply relative overflow-hidden transition-all duration-200;
+}
+
+.btn-interactive::before {
+  content: '';
+  @apply absolute inset-0 bg-white/20 opacity-0 transition-opacity duration-200;
 }
 
 .bento-grid {
