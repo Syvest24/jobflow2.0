@@ -35,7 +35,9 @@ import {
   Upload,
   Compass,
   BookmarkPlus,
-  Lightbulb
+  Lightbulb,
+  Menu,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TagsInput } from "react-tag-input-component";
@@ -91,6 +93,7 @@ export default function App() {
   const [aiResultType, setAiResultType] = useState<'cover-letter' | 'resume-tips' | null>(null);
   const [dbStatus, setDbStatus] = useState<{ connected: boolean, hasUrl: boolean } | null>(null);
   const [isInterviewPrepOpen, setIsInterviewPrepOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const MOCK_DISCOVER_JOBS = [
     { id: 'd1', company: 'Google', position: 'Senior Frontend Engineer', location: 'Mountain View, CA', salary: '$180k - $250k', type: 'Full-time', notes: 'Requires 5+ years React experience.' },
@@ -407,66 +410,43 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Navigation */}
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-2xl border-b border-slate-200/50">
-        <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
-          <div className="flex justify-between h-24 items-center">
-            <div className="flex items-center gap-16">
-              <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setView('tracker')}>
-                <div className="w-12 h-12 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-2xl shadow-slate-200 group-hover:rotate-12 transition-all duration-500 group-hover:bg-indigo-600">
-                  <Briefcase className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black tracking-tighter text-slate-900 leading-none">JOBFLOW</span>
-                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mt-1">Studio</span>
-                </div>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="flex justify-between items-center h-16 sm:h-24">
+            {/* Logo */}
+            <div className="flex items-center gap-2 sm:gap-4 group cursor-pointer flex-shrink-0" onClick={() => { setView('tracker'); setIsMobileMenuOpen(false); }}>
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-2xl shadow-slate-200 group-hover:rotate-12 transition-all duration-500 group-hover:bg-indigo-600">
+                <Briefcase className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
               </div>
-              
-              <div className="hidden md:flex items-center bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
-                <button 
-                  onClick={() => setView('discover')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'discover' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <Compass className="w-4 h-4" />
-                  Discover
-                </button>
-                <button 
-                  onClick={() => setView('tracker')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'tracker' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                  Tracker
-                </button>
-                <button 
-                  onClick={() => setView('portfolio')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'portfolio' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <User className="w-4 h-4" />
-                  Portfolio
-                </button>
-                <button 
-                  onClick={() => setView('analytics')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'analytics' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  Analytics
-                </button>
-                <button 
-                  onClick={() => setView('interview-prep')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'interview-prep' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <Lightbulb className="w-4 h-4" />
-                  Interview Prep
-                </button>
-                <button 
-                  onClick={() => setView('templates')}
-                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'templates' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
-                >
-                  <FileText className="w-4 h-4" />
-                  Templates
-                </button>
+              <div className="flex flex-col hidden sm:block">
+                <span className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 leading-none">JOBFLOW</span>
+                <span className="text-[8px] sm:text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mt-1">Studio</span>
               </div>
             </div>
             
-            <div className="flex items-center gap-8">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center bg-slate-100/50 p-1 sm:p-1.5 rounded-2xl border border-slate-200/50 mx-4 lg:mx-0">
+              {[
+                { id: 'discover', label: 'Discover', icon: Compass },
+                { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
+                { id: 'portfolio', label: 'Portfolio', icon: User },
+                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+                { id: 'interview-prep', label: 'Interview Prep', icon: Lightbulb },
+                { id: 'templates', label: 'Templates', icon: FileText },
+              ].map(({ id, label, icon: Icon }) => (
+                <button 
+                  key={id}
+                  onClick={() => setView(id as any)}
+                  className={`px-6 lg:px-8 py-2 sm:py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${view === id ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden lg:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Right section */}
+            <div className="flex items-center gap-3 sm:gap-4 lg:gap-8 ml-auto">
+              {/* Search (hidden on mobile) */}
               <div className="relative hidden lg:block group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                 <input 
@@ -478,19 +458,20 @@ export default function App() {
                 />
               </div>
               
+              {/* Auth section */}
               {isAdmin ? (
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 sm:gap-4">
                   <button 
-                    onClick={() => setIsAdding(true)}
-                    className="bg-slate-900 hover:bg-indigo-600 text-white px-8 py-4 rounded-[1.5rem] text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all shadow-2xl shadow-slate-200 active:scale-95"
+                    onClick={() => { setIsAdding(true); setIsMobileMenuOpen(false); }}
+                    className="bg-slate-900 hover:bg-indigo-600 text-white px-4 sm:px-8 py-2 sm:py-4 rounded-[1.5rem] text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-2xl shadow-slate-200 active:scale-95"
                   >
-                    <Plus className="w-5 h-5" />
-                    New Entry
+                    <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
+                    <span className="hidden sm:inline">New Entry</span>
                   </button>
-                  <div className="w-px h-10 bg-slate-200" />
+                  <div className="w-px h-8 sm:h-10 bg-slate-200 hidden sm:block" />
                   <button 
                     onClick={handleLogout}
-                    className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-[1.25rem] transition-all"
+                    className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-[1.25rem] transition-all"
                     title="Logout"
                   >
                     <LogOut className="w-5 h-5" />
@@ -499,18 +480,74 @@ export default function App() {
               ) : (
                 <button 
                   onClick={() => setIsLoginOpen(true)}
-                  className="w-12 h-12 flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-[1.25rem] transition-all"
+                  className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-[1.25rem] transition-all"
                   title="Admin Login"
                 >
                   <Lock className="w-5 h-5" />
                 </button>
               )}
+
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                title={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden border-t border-slate-200/50 bg-slate-50"
+              >
+                <div className="px-4 py-4 space-y-2">
+                  {[
+                    { id: 'discover', label: 'Discover', icon: Compass },
+                    { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
+                    { id: 'portfolio', label: 'Portfolio', icon: User },
+                    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+                    { id: 'interview-prep', label: 'Interview Prep', icon: Lightbulb },
+                    { id: 'templates', label: 'Templates', icon: FileText },
+                  ].map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        setView(id as any);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-widest transition-all flex items-center gap-3 ${view === id ? 'text-indigo-600 bg-white shadow-lg' : 'text-slate-600 hover:bg-white'}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  ))}
+                  
+                  {/* Mobile search */}
+                  <div className="relative mt-4 pt-4 border-t border-slate-200">
+                    <Search className="absolute left-4 top-8 w-4 h-4 text-slate-300" />
+                    <input 
+                      type="text" 
+                      placeholder="Search..."
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-transparent outline-none placeholder:text-slate-300"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </nav>
 
-      <main className="max-w-[1600px] mx-auto px-6 lg:px-12 py-12">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
         <AnimatePresence mode="wait">
           {view === 'discover' ? (
             <motion.div
@@ -677,7 +714,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 overflow-x-auto pb-4"
+                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 overflow-x-auto pb-4 -mx-4 sm:-mx-0 px-4 sm:px-0"
                   >
                     {(['Wishlist', 'Applied', 'Interviewing', 'Offer', 'Rejected'] as JobStatus[]).map(status => (
                       <BoardColumn 
@@ -700,34 +737,35 @@ export default function App() {
                     exit={{ opacity: 0, y: -20 }}
                     className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden"
                   >
+                    <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Company & Role</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Applied</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                          <th className="px-3 sm:px-8 py-4 sm:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Company & Role</th>
+                          <th className="px-3 sm:px-8 py-4 sm:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">Status</th>
+                          <th className="px-3 sm:px-8 py-4 sm:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">Date Applied</th>
+                          <th className="px-3 sm:px-8 py-4 sm:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:table-cell">Location</th>
+                          <th className="px-3 sm:px-8 py-4 sm:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {filteredJobs.map(job => (
-                          <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => setSelectedJob(job)}>
-                            <td className="px-8 py-5">
-                              <div className="font-black text-slate-900">
+                          <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer text-sm sm:text-base" onClick={() => setSelectedJob(job)}>
+                            <td className="px-3 sm:px-8 py-3 sm:py-5">
+                              <div className="font-black text-slate-900 text-sm sm:text-base">
                                 <HighlightText text={job.company} highlight={searchQuery} />
                               </div>
                               <div className="text-xs text-indigo-600 font-bold">
                                 <HighlightText text={job.position} highlight={searchQuery} />
                               </div>
                             </td>
-                            <td className="px-8 py-5">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${STATUS_COLORS[job.status]}`}>
+                            <td className="px-3 sm:px-8 py-3 sm:py-5 hidden sm:table-cell">
+                              <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${STATUS_COLORS[job.status]}`}>
                                 {job.status}
                               </span>
                             </td>
-                            <td className="px-8 py-5 text-sm font-bold text-slate-500">{job.date_applied}</td>
-                            <td className="px-8 py-5 text-sm font-bold text-slate-500">
+                            <td className="px-3 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-bold text-slate-500 hidden md:table-cell">{job.date_applied}</td>
+                            <td className="px-3 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-bold text-slate-500 hidden lg:table-cell">
                               <div className="flex items-center gap-2">
                                 <MapPin className="w-3 h-3 text-slate-300" />
                                 {job.location || 'Remote'}
@@ -755,6 +793,7 @@ export default function App() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
