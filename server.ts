@@ -576,9 +576,10 @@ app.post("/api/jobs/jsearch", async (req, res) => {
   }
 
   try {
+    const { searchText: normalizedLocation } = normalizeLocation(location || 'remote');
     const params = new URLSearchParams();
     if (keywords) params.append("query", keywords);
-    if (location) params.append("location", location);
+    if (normalizedLocation) params.append("location", normalizedLocation);
     params.append("page", page.toString());
     params.append("num_pages", "1");
     params.append("date_posted", "month");
@@ -623,25 +624,26 @@ app.post("/api/jobs/jsearch", async (req, res) => {
 
 // Real Job Search - Adzuna API (Tier 2 - Fallback)
 app.post("/api/jobs/adzuna", async (req, res) => {
-  const { keywords, location = "UK", salary_min, salary_max, page = 1 } = req.body;
+  const { keywords, location = "remote", salary_min, salary_max, page = 1 } = req.body;
   
   if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_API_KEY) {
     return res.status(200).json({ jobs: [], source: "adzuna", error: "Adzuna API keys not configured" });
   }
 
   try {
+    const { searchText: normalizedLocation, adzunaCode } = normalizeLocation(location);
     const params = new URLSearchParams();
     params.append("app_id", process.env.ADZUNA_APP_ID || "");
     params.append("app_key", process.env.ADZUNA_API_KEY || "");
     params.append("results_per_page", "20");
     params.append("page", page.toString());
     if (keywords) params.append("what", keywords);
-    if (location) params.append("where", location);
+    if (normalizedLocation) params.append("where", normalizedLocation);
     if (salary_min) params.append("salary_min", salary_min.toString());
     if (salary_max) params.append("salary_max", salary_max.toString());
     params.append("sort_by", "date");
 
-    const countryCode = "gb"; // Default to UK, can be extended
+    const countryCode = adzunaCode; // Use normalized country code
     const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?${params}`);
     const data = await response.json();
 
@@ -665,25 +667,63 @@ app.post("/api/jobs/adzuna", async (req, res) => {
       source: "Adzuna"
     }));
 
-    res.json({ jobs, source: "adzuna", total: data.count });
+    res.json({ jobs, source: "adzuna", total: data.count, country: countryCode });
   } catch (error) {
     console.error("Adzuna error:", error);
     res.status(500).json({ jobs: [], source: "adzuna", error: "Failed to fetch from Adzuna" });
   }
 });
 
+// Location mapping for job APIs
+const locationMap: Record<string, { countries: string[], adzunaCode: string }> = {
+  'europe': { countries: ['uk', 'de', 'fr', 'nl', 'se'], adzunaCode: 'gb' },
+  'uk': { countries: ['uk'], adzunaCode: 'gb' },
+  'germany': { countries: ['de'], adzunaCode: 'de' },
+  'france': { countries: ['fr'], adzunaCode: 'fr' },
+  'netherlands': { countries: ['nl'], adzunaCode: 'nl' },
+  'sweden': { countries: ['se'], adzunaCode: 'se' },
+  'usa': { countries: ['us'], adzunaCode: 'us' },
+  'us': { countries: ['us'], adzunaCode: 'us' },
+  'canada': { countries: ['ca'], adzunaCode: 'ca' },
+  'australia': { countries: ['au'], adzunaCode: 'au' },
+  'india': { countries: ['in'], adzunaCode: 'in' },
+  'remote': { countries: ['uk', 'us', 'ca', 'au'], adzunaCode: 'gb' }
+};
+
+function normalizeLocation(location: string): { searchText: string; adzunaCode: string } {
+  const normalized = location.toLowerCase().trim();
+  const mapping = locationMap[normalized];
+  
+  if (mapping) {
+    return {
+      searchText: normalized === 'europe' ? 'remote' : normalized,
+      adzunaCode: mapping.adzunaCode
+    };
+  }
+  
+  // If not in map, return as-is for JSearch and default to GB for Adzuna
+  return {
+    searchText: location,
+    adzunaCode: 'gb'
+  };
+}
+
 // Combined Real Job Search - Tier 2 with smart fallback
 app.post("/api/jobs/search", async (req, res) => {
   const { keywords, location, salary_min, salary_max, job_type, limit = 10 } = req.body;
 
   try {
+    // Normalize location
+    const { searchText: normalizedLocation, adzunaCode } = normalizeLocation(location || 'remote');
+    console.log(`Search normalized location: "${location}" → "${normalizedLocation}" (Adzuna: ${adzunaCode})`);
+
     // Try JSearch first
     if (process.env.JSEARCH_API_KEY) {
       try {
-        console.log("Trying JSearch with keywords:", keywords, "location:", location);
+        console.log("Trying JSearch with keywords:", keywords, "location:", normalizedLocation);
         const jSearchParams = new URLSearchParams();
         jSearchParams.append("query", keywords || "job");
-        jSearchParams.append("location", location || "Remote");
+        jSearchParams.append("location", normalizedLocation);
         jSearchParams.append("num_pages", "1");
         jSearchParams.append("date_posted", "month");
 
@@ -733,16 +773,16 @@ app.post("/api/jobs/search", async (req, res) => {
     // Fallback to Adzuna
     if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_API_KEY) {
       try {
-        console.log("Trying Adzuna fallback with keywords:", keywords);
+        console.log("Trying Adzuna fallback with keywords:", keywords, "country:", adzunaCode);
         const adzunaParams = new URLSearchParams();
         adzunaParams.append("app_id", process.env.ADZUNA_APP_ID);
         adzunaParams.append("app_key", process.env.ADZUNA_API_KEY);
         adzunaParams.append("results_per_page", "20");
         adzunaParams.append("what", keywords || "job");
-        if (location) adzunaParams.append("where", location);
+        adzunaParams.append("where", normalizedLocation);
         adzunaParams.append("sort_by", "date");
 
-        const adzunaResponse = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/1?${adzunaParams}`);
+        const adzunaResponse = await fetch(`https://api.adzuna.com/v1/api/jobs/${adzunaCode}/search/1?${adzunaParams}`);
         console.log("Adzuna response status:", adzunaResponse.status);
         
         if (adzunaResponse.ok) {
@@ -786,7 +826,8 @@ app.post("/api/jobs/search", async (req, res) => {
       error: "No job APIs configured or all APIs failed. Check server logs.",
       debugInfo: {
         hasJSearch: !!process.env.JSEARCH_API_KEY,
-        hasAdzuna: !!process.env.ADZUNA_APP_ID && !!process.env.ADZUNA_API_KEY
+        hasAdzuna: !!process.env.ADZUNA_APP_ID && !!process.env.ADZUNA_API_KEY,
+        normalizedLocation
       }
     });
   } catch (error) {
