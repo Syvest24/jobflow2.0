@@ -99,6 +99,8 @@ export default function App() {
   const [isInterviewPrepOpen, setIsInterviewPrepOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditingPortfolioInline, setIsEditingPortfolioInline] = useState(false);
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [draftModalJobId, setDraftModalJobId] = useState<string | null>(null);
 
   const [newJob, setNewJob] = useState<NewJob>({
     company: '',
@@ -265,6 +267,114 @@ export default function App() {
       console.log('Draft deleted successfully');
     } catch (err) {
       console.error('Failed to delete draft', err);
+    }
+  };
+
+  const exportDraftToPDF = async (draftId: string) => {
+    try {
+      const response = await fetch('/api/drafts');
+      const drafts = await response.json();
+      const draft = drafts.find((d: any) => d.id === draftId);
+      
+      if (!draft) {
+        alert('Draft not found');
+        return;
+      }
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8"/>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .header { margin-bottom: 30px; }
+              .title { font-size: 24px; font-weight: bold; }
+              .meta { color: #666; font-size: 14px; margin: 5px 0; }
+              .content { white-space: pre-wrap; line-height: 1.8; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="title">${draft.position} - ${draft.company}</div>
+              <div class="meta">Generated: ${new Date().toLocaleDateString()}</div>
+              <div class="meta">Version: ${draft.versionNumber}</div>
+            </div>
+            <div class="content">${draft.content}</div>
+          </body>
+        </html>
+      `;
+
+      // Use html2pdf library
+      const element = document.createElement('div');
+      element.innerHTML = html;
+      const opt = {
+        margin: 10,
+        filename: `${draft.position.replace(/\s+/g, '_')}_${draft.company.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      const html2pdf = (await import('html2pdf.js')).default;
+      html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('Failed to export PDF', err);
+      alert('Error exporting to PDF');
+    }
+  };
+
+  const exportDraftToWord = async (draftId: string) => {
+    try {
+      const response = await fetch('/api/drafts');
+      const drafts = await response.json();
+      const draft = drafts.find((d: any) => d.id === draftId);
+      
+      if (!draft) {
+        alert('Draft not found');
+        return;
+      }
+
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
+      
+      const paragraphs = draft.content.split('\n').map((line: string) => 
+        new Paragraph({
+          text: line,
+          spacing: { line: 360, lineRule: 'auto' }
+        })
+      );
+
+      const doc = new Document({
+        sections: [{
+          children: [
+            new Paragraph({
+              text: draft.position,
+              heading: HeadingLevel.HEADING_1,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({
+              text: `${draft.company} | Version ${draft.versionNumber} | ${new Date().toLocaleDateString()}`,
+              spacing: { after: 400 },
+              style: 'Heading3'
+            }),
+            ...paragraphs
+          ]
+        }]
+      });
+
+      Packer.toBlob(doc).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${draft.position.replace(/\s+/g, '_')}_${draft.company.replace(/\s+/g, '_')}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    } catch (err) {
+      console.error('Failed to export Word', err);
+      alert('Error exporting to Word');
     }
   };
 
@@ -780,6 +890,13 @@ export default function App() {
                                   title="AI Cover Letter"
                                 >
                                   <Sparkles className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => { setDraftModalJobId(job.id); setIsDraftModalOpen(true); }}
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                  title="Generate Cover Letter"
+                                >
+                                  <FileText className="w-4 h-4" />
                                 </button>
                                 <button 
                                   onClick={() => handleDeleteJob(job.id)} 
@@ -1646,6 +1763,72 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Draft Generation Modal */}
+      <AnimatePresence>
+        {isDraftModalOpen && draftModalJobId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Generate Cover Letter</h2>
+                  <p className="text-sm text-indigo-600 font-bold">For {jobs.find(j => j.id === draftModalJobId)?.position} at {jobs.find(j => j.id === draftModalJobId)?.company}</p>
+                </div>
+                <button onClick={() => { setIsDraftModalOpen(false); setDraftModalJobId(null); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                  <XCircle className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-600">Choose an option:</label>
+                  
+                  <button
+                    onClick={() => {
+                      setView('application-materials');
+                      setIsDraftModalOpen(false);
+                      setDraftModalJobId(null);
+                    }}
+                    className="w-full p-4 border-2 border-indigo-200 rounded-2xl hover:bg-indigo-50 transition-colors text-left group"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-indigo-600">Use Template</div>
+                    <p className="text-xs text-slate-600 mt-1">Choose from saved cover letter templates</p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleAiOptimize('cover-letter', `${jobs.find(j => j.id === draftModalJobId)?.position} at ${jobs.find(j => j.id === draftModalJobId)?.company}. ${jobs.find(j => j.id === draftModalJobId)?.notes || ''}`);
+                      setIsDraftModalOpen(false);
+                      setDraftModalJobId(null);
+                    }}
+                    className="w-full p-4 border-2 border-emerald-200 rounded-2xl hover:bg-emerald-50 transition-colors text-left group"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-emerald-600">AI Generation</div>
+                    <p className="text-xs text-slate-600 mt-1">Let Gemini AI create a tailored letter</p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setView('application-materials');
+                      setIsDraftModalOpen(false);
+                      setDraftModalJobId(null);
+                    }}
+                    className="w-full p-4 border-2 border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors text-left group"
+                  >
+                    <div className="font-bold text-slate-900 group-hover:text-slate-600">Start from Scratch</div>
+                    <p className="text-xs text-slate-600 mt-1">Write your own cover letter</p>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

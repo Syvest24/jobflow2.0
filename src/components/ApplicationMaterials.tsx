@@ -177,6 +177,103 @@ export function ApplicationMaterials({
     alert('Copied to clipboard!');
   };
 
+  const exportToPDF = async (draft: CoverLetterDraft) => {
+    try {
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8"/>
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 40px; }
+              .header { margin-bottom: 30px; border-bottom: 2px solid #1e40af; padding-bottom: 20px; }
+              .title { font-size: 28px; font-weight: bold; color: #1e40af; }
+              .meta { color: #666; font-size: 12px; margin: 8px 0; }
+              .content { white-space: pre-wrap; line-height: 1.8; font-family: 'Georgia', serif; }
+              .footer { margin-top: 40px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="title">${draft.position}</div>
+              <div class="meta">${draft.company}</div>
+              <div class="meta">Generated: ${new Date().toLocaleDateString()}</div>
+              <div class="meta">Version: ${draft.versionNumber}</div>
+            </div>
+            <div class="content">${draft.content}</div>
+            <div class="footer">This cover letter was generated using JobFlow.</div>
+          </body>
+        </html>
+      `;
+
+      const element = document.createElement('div');
+      element.innerHTML = html;
+      const opt = {
+        margin: 10,
+        filename: `${draft.position.replace(/\s+/g, '_')}_${draft.company.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      const html2pdf = (await import('html2pdf.js')).default;
+      html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('Failed to export PDF', err);
+      alert('Error exporting to PDF');
+    }
+  };
+
+  const exportToWord = async (draft: CoverLetterDraft) => {
+    try {
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
+      
+      const paragraphs = draft.content.split('\n').map((line: string) => 
+        new Paragraph({
+          text: line || ' ',
+          spacing: { line: 360, lineRule: 'auto' }
+        })
+      );
+
+      const doc = new Document({
+        sections: [{
+          children: [
+            new Paragraph({
+              text: draft.position,
+              heading: HeadingLevel.HEADING_1,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({
+              text: draft.company,
+              heading: HeadingLevel.HEADING_2,
+              spacing: { after: 400 }
+            }),
+            new Paragraph({
+              text: `Version ${draft.versionNumber} • ${new Date().toLocaleDateString()}`,
+              spacing: { after: 400 },
+              style: 'Heading3'
+            }),
+            ...paragraphs
+          ]
+        }]
+      });
+
+      Packer.toBlob(doc).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${draft.position.replace(/\s+/g, '_')}_${draft.company.replace(/\s+/g, '_')}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    } catch (err) {
+      console.error('Failed to export Word', err);
+      alert('Error exporting to Word');
+    }
+  };
+
   if (!isAdmin && drafts.length === 0 && templates.length === 0) {
     return (
       <div className="max-w-5xl mx-auto pb-20">
@@ -422,11 +519,31 @@ export function ApplicationMaterials({
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-64 overflow-y-auto"
+                      className="mt-4 space-y-4"
                     >
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">
-                        {draft.content}
-                      </p>
+                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-64 overflow-y-auto">
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">
+                          {draft.content}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => exportToPDF(draft)}
+                          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+                          title="Export as PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                          PDF
+                        </button>
+                        <button
+                          onClick={() => exportToWord(draft)}
+                          className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center gap-2"
+                          title="Export as Word"
+                        >
+                          <Download className="w-4 h-4" />
+                          Word
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </motion.div>
