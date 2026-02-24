@@ -94,6 +94,7 @@ export default function App() {
   const [dbStatus, setDbStatus] = useState<{ connected: boolean, hasUrl: boolean } | null>(null);
   const [isInterviewPrepOpen, setIsInterviewPrepOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isEditingPortfolioInline, setIsEditingPortfolioInline] = useState(false);
 
   const MOCK_DISCOVER_JOBS = [
     { id: 'd1', company: 'Google', position: 'Senior Frontend Engineer', location: 'Mountain View, CA', salary: '$180k - $250k', type: 'Full-time', notes: 'Requires 5+ years React experience.' },
@@ -834,114 +835,223 @@ export default function App() {
                 <div className="space-y-24">
                   {/* Hero Section - Editorial Style */}
                   <div className="relative pt-12 text-center">
-                    <motion.div 
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                      className="relative inline-block mb-12"
-                    >
-                      <div className="w-48 h-48 bg-slate-900 rounded-[3rem] mx-auto flex items-center justify-center shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
-                        <User className="w-24 h-24 text-white group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center -rotate-12">
-                        <Sparkles className="w-8 h-8 text-indigo-600" />
-                      </div>
-                    </motion.div>
+                    {isEditingPortfolioInline ? (
+                      <div className="bg-white p-8 rounded-[3rem] border-2 border-indigo-300 shadow-lg ring-2 ring-indigo-200 space-y-6">
+                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider mb-6">Editing Profile</h3>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Full Name</label>
+                            <input 
+                              type="text" 
+                              value={editPortfolioData?.name || ''}
+                              onChange={(e) => setEditPortfolioData({...editPortfolioData!, name: e.target.value})}
+                              className="form-input"
+                              placeholder="Full name"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Title</label>
+                            <input 
+                              type="text"
+                              value={editPortfolioData?.title || ''}
+                              onChange={(e) => setEditPortfolioData({...editPortfolioData!, title: e.target.value})}
+                              className="form-input"
+                              placeholder="Your title"
+                            />
+                          </div>
+                        </div>
 
-                    <div className="space-y-6">
-                      <h1 className="text-7xl font-black tracking-tighter text-slate-900 leading-[0.9] uppercase">
-                        {portfolio.name.split(' ').map((word, i) => (
-                          <span key={i} className={i % 2 === 1 ? 'text-indigo-600' : ''}>{word} </span>
-                        ))}
-                      </h1>
-                      <p className="text-2xl text-slate-400 font-black uppercase tracking-[0.2em]">{portfolio.title}</p>
-                      
-                      {isAdmin && (
-                        <button 
-                          onClick={() => {
-                            setEditPortfolioData(portfolio);
-                            setIsEditingPortfolio(true);
-                          }}
-                          className="px-4 py-2 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all flex items-center gap-2 mx-auto"
+                        <div>
+                          <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">About Me</label>
+                          <textarea 
+                            value={editPortfolioData?.about || ''}
+                            onChange={(e) => setEditPortfolioData({...editPortfolioData!, about: e.target.value})}
+                            className="form-textarea"
+                            placeholder="Tell us about yourself"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Email</label>
+                            <input 
+                              type="email"
+                              value={editPortfolioData?.email || ''}
+                              onChange={(e) => setEditPortfolioData({...editPortfolioData!, email: e.target.value})}
+                              className="form-input"
+                              placeholder="your@email.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">LinkedIn</label>
+                            <input 
+                              type="url"
+                              value={editPortfolioData?.linkedin || ''}
+                              onChange={(e) => setEditPortfolioData({...editPortfolioData!, linkedin: e.target.value})}
+                              className="form-input"
+                              placeholder="https://linkedin.com/in/..."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">GitHub</label>
+                            <input 
+                              type="url"
+                              value={editPortfolioData?.github || ''}
+                              onChange={(e) => setEditPortfolioData({...editPortfolioData!, github: e.target.value})}
+                              className="form-input"
+                              placeholder="https://github.com/..."
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Skills</label>
+                          <div className="modern-tag-input">
+                            <TagsInput
+                              value={editPortfolioData?.skills || []}
+                              onChange={(tags) => setEditPortfolioData({...editPortfolioData!, skills: tags})}
+                              name="skills"
+                              placeHolder="Add skill..."
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-4 pt-4">
+                          <button 
+                            onClick={() => {
+                              handleUpdatePortfolio({ preventDefault: () => {} } as React.FormEvent);
+                              setIsEditingPortfolioInline(false);
+                            }}
+                            className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all"
+                          >
+                            <CheckCircle2 className="w-4 h-4 inline mr-2" />
+                            Save Changes
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setEditPortfolioData(portfolio);
+                              setIsEditingPortfolioInline(false);
+                            }}
+                            className="flex-1 bg-slate-200 text-slate-900 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-300 transition-all"
+                          >
+                            <XCircle className="w-4 h-4 inline mr-2" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <motion.div 
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                          className="relative inline-block mb-12"
                         >
-                          <Edit3 className="w-3 h-3" />
-                          Edit Profile
-                        </button>
-                      )}
-                    </div>
+                          <div className="w-48 h-48 bg-slate-900 rounded-[3rem] mx-auto flex items-center justify-center shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
+                            <User className="w-24 h-24 text-white group-hover:scale-110 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center -rotate-12">
+                            <Sparkles className="w-8 h-8 text-indigo-600" />
+                          </div>
+                        </motion.div>
 
-                    <div className="flex justify-center gap-6 pt-12">
-                      {portfolio.github && (
-                        <a href={portfolio.github} target="_blank" className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-slate-900 border border-slate-100">
-                          <Github className="w-6 h-6" />
-                        </a>
-                      )}
-                      {portfolio.linkedin && (
-                        <a href={portfolio.linkedin} target="_blank" className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-blue-600 border border-slate-100">
-                          <Linkedin className="w-6 h-6" />
-                        </a>
-                      )}
-                      {portfolio.email && (
-                        <a href={`mailto:${portfolio.email}`} className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-indigo-600 border border-slate-100">
-                          <Mail className="w-6 h-6" />
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-center gap-8 pt-16">
-                      <div className="flex flex-wrap justify-center gap-6">
-                        {/* English CV */}
-                        <div className="group">
-                          {portfolio.cvs?.en ? (
-                            <button 
-                              onClick={() => handleDownloadCv('en')}
-                              className="px-8 py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all flex items-center justify-center gap-3"
-                            >
-                              <FileText className="w-5 h-5" />
-                              Resume (EN)
-                            </button>
-                          ) : (
-                            <div className="px-8 py-4 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 italic opacity-50">
-                              <FileText className="w-5 h-5" />
-                              EN N/A
-                            </div>
-                          )}
+                        <div className="space-y-6">
+                          <h1 className="text-7xl font-black tracking-tighter text-slate-900 leading-[0.9] uppercase">
+                            {portfolio.name.split(' ').map((word, i) => (
+                              <span key={i} className={i % 2 === 1 ? 'text-indigo-600' : ''}>{word} </span>
+                            ))}
+                          </h1>
+                          <p className="text-2xl text-slate-400 font-black uppercase tracking-[0.2em]">{portfolio.title}</p>
+                          
                           {isAdmin && (
-                            <label className="mt-3 block text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 cursor-pointer text-center transition-colors">
-                              <Upload className="w-3 h-3 inline mr-1" />
-                              {portfolio.cvs?.en ? 'Update' : 'Upload'}
-                              <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleCvUpload(e, 'en')} />
-                            </label>
+                            <button 
+                              onClick={() => {
+                                setEditPortfolioData(portfolio);
+                                setIsEditingPortfolioInline(true);
+                              }}
+                              className="px-4 py-2 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all flex items-center gap-2 mx-auto"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              Edit Profile
+                            </button>
                           )}
                         </div>
 
-                        {/* German CV */}
-                        <div className="group">
-                          {portfolio.cvs?.de ? (
-                            <button 
-                              onClick={() => handleDownloadCv('de')}
-                              className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
-                            >
-                              <FileText className="w-5 h-5" />
-                              Resume (DE)
-                            </button>
-                          ) : (
-                            <div className="px-8 py-4 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 italic opacity-50">
-                              <FileText className="w-5 h-5" />
-                              DE N/A
-                            </div>
+                        <div className="flex justify-center gap-6 pt-12">
+                          {portfolio.github && (
+                            <a href={portfolio.github} target="_blank" className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-slate-900 border border-slate-100">
+                              <Github className="w-6 h-6" />
+                            </a>
                           )}
-                          {isAdmin && (
-                            <label className="mt-3 block text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 cursor-pointer text-center transition-colors">
-                              <Upload className="w-3 h-3 inline mr-1" />
-                              {portfolio.cvs?.de ? 'Update' : 'Upload'}
-                              <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleCvUpload(e, 'de')} />
-                            </label>
+                          {portfolio.linkedin && (
+                            <a href={portfolio.linkedin} target="_blank" className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-blue-600 border border-slate-100">
+                              <Linkedin className="w-6 h-6" />
+                            </a>
+                          )}
+                          {portfolio.email && (
+                            <a href={`mailto:${portfolio.email}`} className="w-14 h-14 bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center text-slate-400 hover:text-indigo-600 border border-slate-100">
+                              <Mail className="w-6 h-6" />
+                            </a>
                           )}
                         </div>
-                      </div>
-                    </div>
+
+                        <div className="flex flex-col items-center gap-8 pt-16">
+                          <div className="flex flex-wrap justify-center gap-6">
+                            {/* English CV */}
+                            <div className="group">
+                              {portfolio.cvs?.en ? (
+                                <button 
+                                  onClick={() => handleDownloadCv('en')}
+                                  className="px-8 py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all flex items-center justify-center gap-3"
+                                >
+                                  <FileText className="w-5 h-5" />
+                                  Resume (EN)
+                                </button>
+                              ) : (
+                                <div className="px-8 py-4 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 italic opacity-50">
+                                  <FileText className="w-5 h-5" />
+                                  EN N/A
+                                </div>
+                              )}
+                              {isAdmin && (
+                                <label className="mt-3 block text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 cursor-pointer text-center transition-colors">
+                                  <Upload className="w-3 h-3 inline mr-1" />
+                                  {portfolio.cvs?.en ? 'Update' : 'Upload'}
+                                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleCvUpload(e, 'en')} />
+                                </label>
+                              )}
+                            </div>
+
+                            {/* German CV */}
+                            <div className="group">
+                              {portfolio.cvs?.de ? (
+                                <button 
+                                  onClick={() => handleDownloadCv('de')}
+                                  className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
+                                >
+                                  <FileText className="w-5 h-5" />
+                                  Resume (DE)
+                                </button>
+                              ) : (
+                                <div className="px-8 py-4 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 italic opacity-50">
+                                  <FileText className="w-5 h-5" />
+                                  DE N/A
+                                </div>
+                              )}
+                              {isAdmin && (
+                                <label className="mt-3 block text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 cursor-pointer text-center transition-colors">
+                                  <Upload className="w-3 h-3 inline mr-1" />
+                                  {portfolio.cvs?.de ? 'Update' : 'Upload'}
+                                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleCvUpload(e, 'de')} />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Content Sections */}
