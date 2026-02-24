@@ -1,5 +1,9 @@
 {
-  "name": "JobFlow - Advanced Job Application Tracker",
-  "description": "A professional job application tracker with Kanban board, analytics, and Gemini-powered resume/cover letter optimization.",
+  "name": "JobFlow - Job Application Tracker",
+  "description": "Advanced job application tracker with Kanban board, AI-powered cover letter generation, and resume optimization for Gemini API.",
+  "author": "Syvester Nsansi",
+  "version": "2.0.0",
+  "keywords": ["job tracker", "job application", "career", "AI resume", "cover letter"],
   "requestFramePermissions": []
 }
+
