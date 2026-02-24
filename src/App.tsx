@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { TagsInput } from "react-tag-input-component";
 import Markdown from 'react-markdown';
 import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate, CoverLetterDraft } from './types';
+import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
 import { ApplicationMaterials } from './components/ApplicationMaterials';
@@ -100,6 +101,7 @@ export default function App() {
   const [isEditingPortfolioInline, setIsEditingPortfolioInline] = useState(false);
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [draftModalJobId, setDraftModalJobId] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [newJob, setNewJob] = useState<NewJob>({
     company: '',
@@ -813,7 +815,33 @@ export default function App() {
                 </label>
               </div>
 
-              {/* Tracker Content */}
+              {/* Analytics Section - Collapsible */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-16 border-t border-slate-100 pt-12"
+              >
+                <button
+                  onClick={() => setShowAnalytics(!showAnalytics)}
+                  className="flex items-center gap-3 mb-8 px-6 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-2xl font-bold uppercase tracking-widest transition-colors"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  {showAnalytics ? '▼' : '▶'} Detailed Analytics
+                </button>
+
+                <AnimatePresence>
+                  {showAnalytics && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Analytics jobs={jobs} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
               <AnimatePresence mode="wait">
                 {trackerLayout === 'board' ? (
                   <motion.div 
