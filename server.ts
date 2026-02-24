@@ -69,7 +69,10 @@ app.get("/api/health", async (req, res) => {
         hasMongoUrl: !!process.env.MONGO_URL,
         hasDbName: !!process.env.DB_NAME,
         hasAdminPassword: !!process.env.ADMIN_PASSWORD,
-        hasGeminiKey: !!process.env.GEMINI_API_KEY
+        hasGeminiKey: !!process.env.GEMINI_API_KEY,
+        hasJSearchKey: !!process.env.JSEARCH_API_KEY,
+        hasAdzunaId: !!process.env.ADZUNA_APP_ID,
+        hasAdzunaKey: !!process.env.ADZUNA_API_KEY
       }
     });
   } catch (err) {
@@ -677,7 +680,14 @@ app.post("/api/jobs/search", async (req, res) => {
     // Try JSearch first
     if (process.env.JSEARCH_API_KEY) {
       try {
-        const jSearchResponse = await fetch(`https://jsearch.p.rapidapi.com/search?query=${keywords}&location=${location}&num_pages=1`, {
+        console.log("Trying JSearch with keywords:", keywords, "location:", location);
+        const jSearchParams = new URLSearchParams();
+        jSearchParams.append("query", keywords || "job");
+        jSearchParams.append("location", location || "Remote");
+        jSearchParams.append("num_pages", "1");
+        jSearchParams.append("date_posted", "month");
+
+        const jSearchResponse = await fetch(`https://jsearch.p.rapidapi.com/search?${jSearchParams}`, {
           method: 'GET',
           headers: {
             'x-rapidapi-host': 'jsearch.p.rapidapi.com',
@@ -685,8 +695,12 @@ app.post("/api/jobs/search", async (req, res) => {
           }
         });
 
+        console.log("JSearch response status:", jSearchResponse.status);
+        
         if (jSearchResponse.ok) {
           const jSearchData = await jSearchResponse.json();
+          console.log("JSearch returned", jSearchData.data?.length || 0, "jobs");
+          
           const jsearchJobs = jSearchData.data?.map((job: any) => ({
             id: job.job_id,
             title: job.job_title,
@@ -699,7 +713,7 @@ app.post("/api/jobs/search", async (req, res) => {
             type: job.job_employment_type || "Full-time",
             posted: job.job_posted_at_datetime_utc,
             source: "JSearch",
-            match: "92" // Real jobs get high match by default
+            match: "92"
           })) || [];
 
           return res.json({ 
@@ -707,53 +721,77 @@ app.post("/api/jobs/search", async (req, res) => {
             source: "JSearch",
             total: jsearchJobs.length 
           });
+        } else {
+          const errorData = await jSearchResponse.text();
+          console.log("JSearch error response:", errorData);
         }
       } catch (jsearchError) {
-        console.log("JSearch failed, trying Adzuna...");
+        console.error("JSearch error:", jsearchError);
       }
     }
 
     // Fallback to Adzuna
     if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_API_KEY) {
-      const adzunaParams = new URLSearchParams();
-      adzunaParams.append("app_id", process.env.ADZUNA_APP_ID);
-      adzunaParams.append("app_key", process.env.ADZUNA_API_KEY);
-      adzunaParams.append("results_per_page", "20");
-      adzunaParams.append("what", keywords);
-      if (location) adzunaParams.append("where", location);
-      adzunaParams.append("sort_by", "date");
+      try {
+        console.log("Trying Adzuna fallback with keywords:", keywords);
+        const adzunaParams = new URLSearchParams();
+        adzunaParams.append("app_id", process.env.ADZUNA_APP_ID);
+        adzunaParams.append("app_key", process.env.ADZUNA_API_KEY);
+        adzunaParams.append("results_per_page", "20");
+        adzunaParams.append("what", keywords || "job");
+        if (location) adzunaParams.append("where", location);
+        adzunaParams.append("sort_by", "date");
 
-      const adzunaResponse = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/1?${adzunaParams}`);
-      if (adzunaResponse.ok) {
-        const adzunaData = await adzunaResponse.json();
-        const adzunaJobs = adzunaData.results?.map((job: any) => ({
-          id: job.id,
-          title: job.title,
-          company: job.company?.display_name || "Unknown",
-          location: job.location?.display_name || "Remote",
-          salary: job.salary_min ? `£${job.salary_min}-${job.salary_max}` : "Not listed",
-          description: job.description?.substring(0, 300) || "",
-          url: job.redirect_url,
-          remote: job.location?.display_name?.toLowerCase().includes("remote") ? "Remote" : "On-site",
-          type: job.contract_type || "Full-time",
-          posted: job.created,
-          source: "Adzuna",
-          match: "88"
-        })) || [];
+        const adzunaResponse = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/1?${adzunaParams}`);
+        console.log("Adzuna response status:", adzunaResponse.status);
+        
+        if (adzunaResponse.ok) {
+          const adzunaData = await adzunaResponse.json();
+          console.log("Adzuna returned", adzunaData.results?.length || 0, "jobs");
+          
+          const adzunaJobs = adzunaData.results?.map((job: any) => ({
+            id: job.id,
+            title: job.title,
+            company: job.company?.display_name || "Unknown",
+            location: job.location?.display_name || "Remote",
+            salary: job.salary_min ? `£${job.salary_min}-${job.salary_max}` : "Not listed",
+            description: job.description?.substring(0, 300) || "",
+            url: job.redirect_url,
+            remote: job.location?.display_name?.toLowerCase().includes("remote") ? "Remote" : "On-site",
+            type: job.contract_type || "Full-time",
+            posted: job.created,
+            source: "Adzuna",
+            match: "88"
+          })) || [];
 
-        return res.json({
-          jobs: adzunaJobs.slice(0, limit),
-          source: "Adzuna",
-          total: adzunaJobs.length
-        });
+          return res.json({
+            jobs: adzunaJobs.slice(0, limit),
+            source: "Adzuna",
+            total: adzunaJobs.length
+          });
+        } else {
+          const errorData = await adzunaResponse.text();
+          console.log("Adzuna error response:", errorData);
+        }
+      } catch (adzunaError) {
+        console.error("Adzuna error:", adzunaError);
       }
     }
 
-    // If both fail, return empty
-    res.json({ jobs: [], source: "none", error: "No job APIs configured" });
+    // If both fail, return empty with informative message
+    console.log("All job APIs failed or not configured");
+    res.json({ 
+      jobs: [], 
+      source: "none", 
+      error: "No job APIs configured or all APIs failed. Check server logs.",
+      debugInfo: {
+        hasJSearch: !!process.env.JSEARCH_API_KEY,
+        hasAdzuna: !!process.env.ADZUNA_APP_ID && !!process.env.ADZUNA_API_KEY
+      }
+    });
   } catch (error) {
     console.error("Job search error:", error);
-    res.status(500).json({ jobs: [], error: "Failed to search jobs" });
+    res.status(500).json({ jobs: [], error: "Failed to search jobs", details: (error as any)?.message });
   }
 });
 
