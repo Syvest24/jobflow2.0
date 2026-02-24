@@ -577,8 +577,16 @@ app.post("/api/jobs/jsearch", async (req, res) => {
 
   try {
     const { searchText: normalizedLocation } = normalizeLocation(location || 'remote');
+    
+    // Build query with location included in keywords for better filtering
+    let finalQuery = keywords || "job";
+    if (location && location.toLowerCase() !== 'remote') {
+      // Include location in the query for better filtering
+      finalQuery = `${finalQuery} ${location}`;
+    }
+    
     const params = new URLSearchParams();
-    if (keywords) params.append("query", keywords);
+    if (finalQuery) params.append("query", finalQuery);
     if (normalizedLocation) params.append("location", normalizedLocation);
     params.append("page", page.toString());
     params.append("num_pages", "1");
@@ -599,7 +607,7 @@ app.post("/api/jobs/jsearch", async (req, res) => {
       throw new Error('JSearch API error');
     }
 
-    const jobs = data.data.map((job: any) => ({
+    const allJobs = data.data.map((job: any) => ({
       id: job.job_id,
       title: job.job_title,
       company: job.employer_name,
@@ -615,7 +623,12 @@ app.post("/api/jobs/jsearch", async (req, res) => {
       source: "JSearch"
     }));
 
-    res.json({ jobs, source: "jsearch", total: data.data.length });
+    // Filter results to match requested location
+    const filteredJobs = location && location.toLowerCase() !== 'remote' 
+      ? allJobs.filter(job => isLocationMatch(job.location, location))
+      : allJobs;
+
+    res.json({ jobs: filteredJobs, source: "jsearch", total: filteredJobs.length, filtered: filteredJobs.length < allJobs.length });
   } catch (error) {
     console.error("JSearch error:", error);
     res.status(500).json({ jobs: [], source: "jsearch", error: "Failed to fetch from JSearch" });
@@ -723,6 +736,42 @@ function normalizeLocation(location: string): { searchText: string; adzunaCode: 
   };
 }
 
+// Helper function to check if a job location matches the requested region
+function isLocationMatch(jobLocation: string, requestedLocation: string): boolean {
+  if (!requestedLocation || requestedLocation.toLowerCase() === 'remote') {
+    return true; // Accept any location for remote search
+  }
+
+  const jobLocationLower = jobLocation.toLowerCase();
+  const requestedLower = requestedLocation.toLowerCase();
+  
+  // Direct match or contains
+  if (jobLocationLower.includes(requestedLower)) return true;
+  
+  // Check for country matches based on location map
+  const locationEntry = locationMap[requestedLower];
+  if (locationEntry && locationEntry.countries) {
+    const countryNames = locationEntry.countries.map(c => {
+      const countryMap: Record<string, string[]> = {
+        'de': ['germany', 'deutschland', 'berlin', 'munich', 'hamburg'],
+        'fr': ['france', 'paris', 'lyon', 'marseille'],
+        'nl': ['netherlands', 'dutch', 'amsterdam', 'rotterdam'],
+        'uk': ['uk', 'united kingdom', 'england', 'london', 'manchester'],
+        'se': ['sweden', 'stockholm', 'gothenburg'],
+        'us': ['usa', 'us', 'united states', 'america', 'new york', 'california', 'texas'],
+        'ca': ['canada', 'canadian', 'toronto', 'vancouver'],
+        'au': ['australia', 'australian', 'sydney', 'melbourne'],
+        'in': ['india', 'indian', 'delhi', 'mumbai', 'bangalore']
+      };
+      return countryMap[c] || [c];
+    }).flat();
+    
+    return countryNames.some(country => jobLocationLower.includes(country));
+  }
+  
+  return false;
+}
+
 // Combined Real Job Search - Tier 2 with smart fallback
 app.post("/api/jobs/search", async (req, res) => {
   const { keywords, location, salary_min, salary_max, job_type, limit = 10 } = req.body;
@@ -784,9 +833,18 @@ app.post("/api/jobs/search", async (req, res) => {
     // Try JSearch (fallback for European, primary for others)
     if (process.env.JSEARCH_API_KEY) {
       try {
-        console.log("Trying JSearch with keywords:", keywords, "location:", normalizedLocation);
+        // Build query with location included in keywords if location seems to matter
+        let finalQuery = keywords || "job";
+        
+        // Add location to query keywords if it seems location-specific
+        if (location && location.toLowerCase() !== 'remote') {
+          // Include location in the query for better filtering
+          finalQuery = `${finalQuery} ${location}`;
+        }
+        
+        console.log("Trying JSearch with query:", finalQuery, "location param:", normalizedLocation);
         const jSearchParams = new URLSearchParams();
-        jSearchParams.append("query", keywords || "job");
+        jSearchParams.append("query", finalQuery);
         jSearchParams.append("location", normalizedLocation);
         jSearchParams.append("num_pages", "1");
         jSearchParams.append("date_posted", "month");
@@ -820,10 +878,16 @@ app.post("/api/jobs/search", async (req, res) => {
             match: "90"
           })) || [];
 
+          // Filter results to match requested location
+          const filteredJobs = location && location.toLowerCase() !== 'remote' 
+            ? jsearchJobs.filter(job => isLocationMatch(job.location, location))
+            : jsearchJobs;
+
           return res.json({ 
-            jobs: jsearchJobs.slice(0, limit),
+            jobs: filteredJobs.slice(0, limit),
             source: "JSearch",
-            total: jsearchJobs.length 
+            total: filteredJobs.length,
+            filtered: filteredJobs.length < jsearchJobs.length
           });
         } else {
           const errorData = await jSearchResponse.text();
