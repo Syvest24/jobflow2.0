@@ -564,13 +564,13 @@ export default function App() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-1">
               {[
+                { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
+                { id: 'application-materials', label: 'Materials', icon: FileText },
                 { id: 'discover', label: 'Discover', icon: Sparkles },
                 { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
-                { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                 { id: 'portfolio', label: 'Portfolio', icon: User },
-                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                 { id: 'interview-prep', label: 'Interview', icon: Lightbulb },
-                { id: 'application-materials', label: 'Materials', icon: FileText },
+                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
               ].map(({ id, label, icon: Icon }) => (
                 <button 
                   key={id}
@@ -646,13 +646,13 @@ export default function App() {
               >
                 <div className="px-4 py-3 space-y-1">
                   {[
+                    { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
+                    { id: 'application-materials', label: 'Materials', icon: FileText },
                     { id: 'discover', label: 'Discover', icon: Sparkles },
                     { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
-                    { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                     { id: 'portfolio', label: 'Portfolio', icon: User },
-                    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                     { id: 'interview-prep', label: 'Interview Prep', icon: Lightbulb },
-                    { id: 'templates', label: 'Templates', icon: FileText },
+                    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                   ].map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
@@ -715,9 +715,9 @@ export default function App() {
               {/* Hero Section */}
               <div className="mb-8 sm:mb-16">
                 <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 mb-2 sm:mb-4">
-                  Welcome back, <span className="text-indigo-600">{portfolio?.name.split(' ')[0] || 'User'}</span>.
+                  Application <span className="text-indigo-600">Pipeline</span>
                 </h2>
-                <p className="text-sm sm:text-lg text-slate-400 font-bold uppercase tracking-widest">You have {jobs.length} active applications.</p>
+                <p className="text-sm sm:text-lg text-slate-400 font-bold uppercase tracking-widest">{jobs.length} {jobs.length === 1 ? 'application' : 'applications'} in progress • Tracking opportunities</p>
               </div>
 
               {/* Stats Grid */}
