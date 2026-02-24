@@ -199,6 +199,169 @@ app.delete("/api/jobs/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
+// Export Jobs as CSV
+app.get("/api/jobs/export/csv", async (req, res) => {
+  if (!db) {
+    const connected = await connectDB();
+    if (!connected) {
+      // Return mock data CSV for demo
+      const headers = "Company,Position,Status,Location,Salary,Date Applied,Notes,Link\n";
+      const mockData = "Google,Senior Engineer,Applied,Mountain View,200000,2024-01-15,Great opportunity,https://google.com\n";
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=jobs.csv");
+      return res.send(headers + mockData);
+    }
+  }
+  try {
+    const jobs = await db.collection("applications").find({}).sort({ created_at: -1 }).toArray();
+    
+    // Convert jobs to CSV
+    const headers = "Company,Position,Status,Location,Salary,Date Applied,Notes,Link\n";
+    const csvRows = jobs.map((job: any) => {
+      const escapeField = (field: string) => {
+        if (!field) return "";
+        if (field.includes(",") || field.includes('"') || field.includes("\n")) {
+          return `"${field.replace(/"/g, '""')}"`;
+        }
+        return field;
+      };
+      
+      return [
+        escapeField(job.company || ""),
+        escapeField(job.position || ""),
+        escapeField(job.status || ""),
+        escapeField(job.location || ""),
+        escapeField(job.salary || ""),
+        escapeField(job.date_applied || ""),
+        escapeField(job.notes || ""),
+        escapeField(job.link || "")
+      ].join(",");
+    }).join("\n");
+    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=jobs.csv");
+    res.send(headers + csvRows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to export jobs" });
+  }
+});
+
+// Import Jobs from CSV
+app.post("/api/jobs/import/csv", authenticateAdmin, async (req, res) => {
+  if (!db) {
+    const connected = await connectDB();
+    if (!connected) {
+      return res.status(500).json({ error: "Database not available" });
+    }
+  }
+  
+  const { csvData } = req.body;
+  if (!csvData || typeof csvData !== 'string') {
+    return res.status(400).json({ error: "Invalid CSV data" });
+  }
+
+  try {
+    const lines = csvData.trim().split('\n');
+    if (lines.length < 2) {
+      return res.status(400).json({ error: "CSV must have headers and at least one data row" });
+    }
+
+    // Parse CSV - simple parser that handles quoted fields
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let insideQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (char === '"') {
+          if (insideQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
+        } else if (char === ',' && !insideQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current.trim());
+      return result;
+    };
+
+    // Parse header
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+    const requiredFields = ['company', 'position', 'status'];
+    
+    // Validate headers
+    for (const field of requiredFields) {
+      if (!headers.includes(field)) {
+        return res.status(400).json({ error: `Missing required field: ${field}` });
+      }
+    }
+
+    // Parse and insert jobs
+    const jobs = [];
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+
+      const values = parseCSVLine(lines[i]);
+      const job: any = {
+        created_at: new Date().toISOString(),
+      };
+
+      headers.forEach((header, idx) => {
+        const value = values[idx] || '';
+        if (header === 'date applied') {
+          job.date_applied = value;
+        } else if (header === 'date_applied') {
+          job.date_applied = value;
+        } else {
+          job[header] = value;
+        }
+      });
+
+      // Validate required fields
+      if (!job.company || !job.position || !job.status) {
+        continue;
+      }
+
+      // Validate status
+      const validStatuses = ['Wishlist', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
+      if (!validStatuses.includes(job.status)) {
+        job.status = 'Applied';
+      }
+
+      if (!job.date_applied) {
+        job.date_applied = new Date().toISOString().split('T')[0];
+      }
+
+      jobs.push(job);
+    }
+
+    if (jobs.length === 0) {
+      return res.status(400).json({ error: "No valid jobs to import" });
+    }
+
+    // Insert all jobs
+    const result = await db.collection("applications").insertMany(jobs);
+    res.json({ 
+      success: true, 
+      imported: result.insertedCount,
+      totalRows: lines.length - 1
+    });
+  } catch (err) {
+    console.error("Import error:", err);
+    res.status(500).json({ error: "Failed to import jobs" });
+  }
+});
+
 // Portfolio Routes
 app.get("/api/portfolio", async (req, res) => {
   if (!db) await connectDB();

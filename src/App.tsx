@@ -728,6 +728,58 @@ export default function App() {
                     <option value="Rejected">Rejected</option>
                   </select>
                 </div>
+
+                <button 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = '/api/jobs/export/csv';
+                    link.download = `jobs-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="px-6 py-3 bg-slate-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Export CSV
+                </button>
+
+                <label className="px-6 py-3 bg-white text-slate-900 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  Import CSV
+                  <input 
+                    type="file" 
+                    accept=".csv" 
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      try {
+                        const csvData = await file.text();
+                        const res = await fetch('/api/jobs/import/csv', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ csvData })
+                        });
+                        
+                        if (res.ok) {
+                          const data = await res.json();
+                          alert(`Successfully imported ${data.imported} jobs!`);
+                          fetchJobs();
+                        } else {
+                          const error = await res.json();
+                          alert(`Import failed: ${error.error}`);
+                        }
+                      } catch (err) {
+                        alert('Error reading file');
+                      }
+                      
+                      // Reset input
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
               </div>
 
               {/* Tracker Content */}
