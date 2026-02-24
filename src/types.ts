@@ -83,6 +83,22 @@ export interface CoverLetterTemplate {
   updated_at: string;
 }
 
+export interface CoverLetterDraft {
+  id: string;
+  jobId?: string;
+  company?: string;
+  position?: string;
+  content: string;
+  templateUsed?: string;
+  createdFrom: 'template' | 'ai-generated' | 'manual';
+  status: 'draft' | 'sent';
+  versionNumber: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  sentAt?: string;
+}
+
 export interface Analytics {
   total_applications: number;
   applied: number;

@@ -42,10 +42,11 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { TagsInput } from "react-tag-input-component";
 import Markdown from 'react-markdown';
-import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate } from './types';
+import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate, CoverLetterDraft } from './types';
 import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
+import { ApplicationMaterials } from './components/ApplicationMaterials';
 import { UnifiedJobDiscovery } from './components/UnifiedJobDiscovery';
 import { RealJobSearch } from './components/RealJobSearch';
 import { EnhancedPortfolio } from './components/EnhancedPortfolio';
@@ -81,7 +82,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
+  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'application-materials'>('discover');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -220,6 +221,50 @@ export default function App() {
       fetchTemplates();
     } catch (err) {
       console.error('Failed to delete template', err);
+    }
+  };
+
+  const handleSaveDraft = async (draft: CoverLetterDraft) => {
+    if (!isAdmin) return setIsLoginOpen(true);
+    try {
+      const method = draft.id.startsWith('draft_') ? 'POST' : 'PUT';
+      const url = method === 'POST' ? '/api/drafts' : `/api/drafts/${draft.id}`;
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+      if (res.ok) {
+        console.log('Draft saved successfully');
+      }
+    } catch (err) {
+      console.error('Failed to save draft', err);
+    }
+  };
+
+  const handleUpdateDraft = async (id: string, data: Partial<CoverLetterDraft>) => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch(`/api/drafts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        console.log('Draft updated successfully');
+      }
+    } catch (err) {
+      console.error('Failed to update draft', err);
+    }
+  };
+
+  const handleDeleteDraft = async (id: string) => {
+    if (!isAdmin) return;
+    try {
+      await fetch(`/api/drafts/${id}`, { method: 'DELETE' });
+      console.log('Draft deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete draft', err);
     }
   };
 
@@ -415,7 +460,7 @@ export default function App() {
                 { id: 'portfolio', label: 'Portfolio', icon: User },
                 { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                 { id: 'interview-prep', label: 'Interview', icon: Lightbulb },
-                { id: 'templates', label: 'Templates', icon: FileText },
+                { id: 'application-materials', label: 'Materials', icon: FileText },
               ].map(({ id, label, icon: Icon }) => (
                 <button 
                   key={id}
@@ -1134,12 +1179,16 @@ export default function App() {
             <Analytics jobs={jobs} />
           ) : view === 'interview-prep' ? (
             <InterviewPrep />
-          ) : view === 'templates' ? (
-            <CoverLetterTemplates 
+          ) : view === 'application-materials' ? (
+            <ApplicationMaterials 
               templates={templates}
-              onSave={handleSaveTemplate}
-              onDelete={handleDeleteTemplate}
+              jobs={jobs}
               isAdmin={isAdmin}
+              onSaveTemplate={handleSaveTemplate}
+              onDeleteTemplate={handleDeleteTemplate}
+              onCreateDraft={handleSaveDraft}
+              onUpdateDraft={handleUpdateDraft}
+              onDeleteDraft={handleDeleteDraft}
               onLoginRequired={() => setIsLoginOpen(true)}
             />
           ) : (

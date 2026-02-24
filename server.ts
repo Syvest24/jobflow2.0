@@ -1540,6 +1540,142 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).json({ error: "Internal server error", message: err.message });
 });
 
+// Cover Letter Drafts Management
+app.get("/api/drafts", async (req, res) => {
+  if (!db) await connectDB();
+  try {
+    const drafts = await db.collection("drafts").find({}).sort({ created_at: -1 }).toArray();
+    res.json(drafts.map((d: any) => ({ ...d, id: d._id.toString() })));
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+app.post("/api/drafts", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { jobId, company, position, content, templateUsed, createdFrom, notes } = req.body;
+  
+  try {
+    const result = await db.collection("drafts").insertOne({
+      jobId,
+      company,
+      position,
+      content,
+      templateUsed,
+      createdFrom,
+      status: 'draft',
+      versionNumber: 1,
+      notes,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    res.json({ 
+      success: true, 
+      id: result.insertedId.toString(),
+      message: 'Draft saved successfully'
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save draft" });
+  }
+});
+
+app.put("/api/drafts/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  const { content, notes, status } = req.body;
+  
+  try {
+    const draft = await db.collection("drafts").findOne({ _id: new ObjectId(id) });
+    const newVersion = (draft?.versionNumber || 1) + 1;
+    
+    await db.collection("drafts").updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          content, 
+          notes,
+          status: status || draft?.status,
+          versionNumber: newVersion,
+          updated_at: new Date().toISOString(),
+          sentAt: status === 'sent' ? new Date().toISOString() : draft?.sentAt
+        } 
+      }
+    );
+    res.json({ success: true, versionNumber: newVersion });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update draft" });
+  }
+});
+
+app.delete("/api/drafts/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  
+  try {
+    await db.collection("drafts").deleteOne({ _id: new ObjectId(id) });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete draft" });
+  }
+});
+
+// Get drafts for specific job
+app.get("/api/jobs/:jobId/drafts", async (req, res) => {
+  if (!db) await connectDB();
+  const { jobId } = req.params;
+  
+  try {
+    const drafts = await db.collection("drafts").find({ jobId }).sort({ created_at: -1 }).toArray();
+    res.json(drafts.map((d: any) => ({ ...d, id: d._id.toString() })));
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+// Create draft from template with variable substitution
+app.post("/api/drafts/from-template", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { templateId, jobData } = req.body;
+  
+  try {
+    const template = await db.collection("templates").findOne({ _id: new ObjectId(templateId) });
+    if (!template) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    
+    // Replace variables in template
+    let content = template.content;
+    const variables: Record<string, string> = {
+      '[COMPANY_NAME]': jobData.company || '',
+      '[POSITION]': jobData.position || '',
+      '[JOB_DESCRIPTION]': jobData.description || '',
+      '[YOUR_NAME]': jobData.yourName || 'Your Name',
+      '[YOUR_SKILLS]': jobData.skills?.join(', ') || ''
+    };
+    
+    Object.entries(variables).forEach(([key, value]) => {
+      content = content.replace(new RegExp(key, 'g'), value);
+    });
+    
+    const result = await db.collection("drafts").insertOne({
+      jobId: jobData.jobId,
+      company: jobData.company,
+      position: jobData.position,
+      content,
+      templateUsed: template.name,
+      createdFrom: 'template',
+      status: 'draft',
+      versionNumber: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    
+    res.json({ success: true, id: result.insertedId.toString() });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create draft from template" });
+  }
+});
+
 async function startServer() {
   try {
     await connectDB();
