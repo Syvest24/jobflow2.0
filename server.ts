@@ -15,14 +15,29 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "TheSecurePass2025!";
 const mongoUrl = process.env.MONGO_URL || "mongodb://localhost:27017";
 const dbName = process.env.DB_NAME || "jobapp0";
 let db: any;
+let mongoClient: MongoClient | null = null;
 
 async function connectDB() {
   try {
-    const client = await MongoClient.connect(mongoUrl);
-    db = client.db(dbName);
+    // Reuse existing connection if already connected
+    if (db) {
+      return db;
+    }
+    
+    mongoClient = new MongoClient(mongoUrl, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 5000,
+    });
+    
+    await mongoClient.connect();
+    db = mongoClient.db(dbName);
     console.log("Connected to MongoDB");
+    return db;
   } catch (err) {
     console.error("MongoDB connection error:", err);
+    db = null;
+    mongoClient = null;
+    throw err;
   }
 }
 
@@ -30,16 +45,29 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Health Check
-app.get("/api/health", (req, res) => {
-  res.json({ 
-    status: "ok", 
-    dbConnected: !!db,
-    env: {
-      hasMongoUrl: !!process.env.MONGO_URL,
-      hasDbName: !!process.env.DB_NAME,
-      hasAdminPassword: !!process.env.ADMIN_PASSWORD
+app.get("/api/health", async (req, res) => {
+  try {
+    if (!db) {
+      await connectDB();
     }
-  });
+    res.json({ 
+      status: "ok", 
+      dbConnected: !!db,
+      env: {
+        hasMongoUrl: !!process.env.MONGO_URL,
+        hasDbName: !!process.env.DB_NAME,
+        hasAdminPassword: !!process.env.ADMIN_PASSWORD,
+        hasGeminiKey: !!process.env.GEMINI_API_KEY
+      }
+    });
+  } catch (err) {
+    console.error("Health check error:", err);
+    res.status(500).json({ 
+      status: "error", 
+      message: "Database connection failed",
+      dbConnected: false 
+    });
+  }
 });
 
 // Auth Middleware
@@ -256,8 +284,19 @@ app.post("/api/ai/optimize", async (req, res) => {
   }
 });
 
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error("Error:", err);
+  res.status(500).json({ error: "Internal server error", message: err.message });
+});
+
 async function startServer() {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error("Failed to connect to MongoDB on startup:", err);
+    // Continue anyway - connection will be retried on first request
+  }
 
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
