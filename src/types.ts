@@ -41,3 +41,34 @@ export interface Portfolio {
     de?: { filename: string; updatedAt: string };
   };
 }
+
+export interface CoverLetterTemplate {
+  id: string;
+  name: string;
+  content: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Analytics {
+  total_applications: number;
+  applied: number;
+  interviewing: number;
+  offers: number;
+  rejected: number;
+  wishlist: number;
+  conversion_rate: number;
+  average_time_to_offer: number;
+  applications_by_month: Record<string, number>;
+}
+
+export interface InterviewQuestion {
+  id: string;
+  question: string;
+  suggested_answer?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: string;
+  job_id?: string;
+}
+

@@ -284,6 +284,91 @@ app.post("/api/ai/optimize", async (req, res) => {
   }
 });
 
+// Interview Preparation Route
+app.post("/api/ai/interview-prep", async (req, res) => {
+  const { company, position, description } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Gemini API key not configured" });
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const model = "gemini-3-flash-preview";
+
+  const prompt = `Generate 10 interview questions for a ${position} role at ${company}. Include both technical and behavioral questions.
+  Job Description: ${description}
+  
+  Format as a numbered list, one question per line.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+    res.json({ questions: response.text });
+  } catch (error) {
+    console.error("AI Error:", error);
+    res.status(500).json({ error: "Failed to generate interview questions" });
+  }
+});
+
+// Cover Letter Templates Routes
+app.get("/api/templates", async (req, res) => {
+  if (!db) await connectDB();
+  try {
+    const templates = await db.collection("templates").find({}).toArray();
+    res.json(templates.map((t: any) => ({ ...t, id: t._id.toString() })));
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+app.post("/api/templates", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { name, content, description } = req.body;
+  
+  try {
+    const result = await db.collection("templates").insertOne({
+      name,
+      content,
+      description,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    res.json({ ...req.body, id: result.insertedId.toString() });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save template" });
+  }
+});
+
+app.put("/api/templates/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  const { name, content, description } = req.body;
+  
+  try {
+    await db.collection("templates").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { name, content, description, updated_at: new Date().toISOString() } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update template" });
+  }
+});
+
+app.delete("/api/templates/:id", authenticateAdmin, async (req, res) => {
+  if (!db) await connectDB();
+  const { id } = req.params;
+  
+  try {
+    await db.collection("templates").deleteOne({ _id: new ObjectId(id) });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete template" });
+  }
+});
+
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
   console.error("Error:", err);
