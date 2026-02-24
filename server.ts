@@ -628,7 +628,13 @@ app.post("/api/jobs/jsearch", async (req, res) => {
       ? allJobs.filter(job => isLocationMatch(job.location, location))
       : allJobs;
 
-    res.json({ jobs: filteredJobs, source: "jsearch", total: filteredJobs.length, filtered: filteredJobs.length < allJobs.length });
+    // If filtering removed all results, show all results instead
+    if (filteredJobs.length === 0 && allJobs.length > 0) {
+      console.log("Location filtering removed all results, returning unfiltered results");
+      filteredJobs.push(...allJobs);
+    }
+
+    res.json({ jobs: filteredJobs, source: "jsearch", total: filteredJobs.length, filtered: filteredJobs.length < allJobs.length && filteredJobs.length > 0 });
   } catch (error) {
     console.error("JSearch error:", error);
     res.status(500).json({ jobs: [], source: "jsearch", error: "Failed to fetch from JSearch" });
@@ -879,15 +885,21 @@ app.post("/api/jobs/search", async (req, res) => {
           })) || [];
 
           // Filter results to match requested location
-          const filteredJobs = location && location.toLowerCase() !== 'remote' 
+          let filteredJobs = location && location.toLowerCase() !== 'remote' 
             ? jsearchJobs.filter(job => isLocationMatch(job.location, location))
             : jsearchJobs;
+
+          // If filtering removed all results, show all results instead
+          if (filteredJobs.length === 0 && jsearchJobs.length > 0) {
+            console.log("Location filtering removed all results, returning unfiltered results");
+            filteredJobs = jsearchJobs;
+          }
 
           return res.json({ 
             jobs: filteredJobs.slice(0, limit),
             source: "JSearch",
             total: filteredJobs.length,
-            filtered: filteredJobs.length < jsearchJobs.length
+            filtered: filteredJobs.length < jsearchJobs.length && filteredJobs.length > 0
           });
         } else {
           const errorData = await jSearchResponse.text();
