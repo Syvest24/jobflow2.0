@@ -43,7 +43,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { TagsInput } from "react-tag-input-component";
 import Markdown from 'react-markdown';
 import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate, CoverLetterDraft } from './types';
-import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
 import { ApplicationMaterials } from './components/ApplicationMaterials';
@@ -82,7 +81,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'application-materials'>('portfolio');
+  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'interview-prep' | 'application-materials'>('portfolio');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -570,7 +569,6 @@ export default function App() {
                 { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
                 { id: 'portfolio', label: 'Portfolio', icon: User },
                 { id: 'interview-prep', label: 'Interview', icon: Lightbulb },
-                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
               ].map(({ id, label, icon: Icon }) => (
                 <button 
                   key={id}
@@ -652,7 +650,6 @@ export default function App() {
                     { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
                     { id: 'portfolio', label: 'Portfolio', icon: User },
                     { id: 'interview-prep', label: 'Interview Prep', icon: Lightbulb },
-                    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                   ].map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
@@ -1292,8 +1289,6 @@ export default function App() {
               }}
               isAdmin={isAdmin}
             />
-          ) : view === 'analytics' ? (
-            <Analytics jobs={jobs} />
           ) : view === 'interview-prep' ? (
             <InterviewPrep />
           ) : view === 'application-materials' ? (
