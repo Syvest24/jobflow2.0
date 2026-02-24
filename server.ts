@@ -759,20 +759,23 @@ function isLocationMatch(jobLocation: string, requestedLocation: string): boolea
   if (locationEntry && locationEntry.countries) {
     const countryNames = locationEntry.countries.map(c => {
       const countryMap: Record<string, string[]> = {
-        'de': ['germany', 'deutschland', 'berlin', 'munich', 'hamburg'],
-        'fr': ['france', 'paris', 'lyon', 'marseille'],
-        'nl': ['netherlands', 'dutch', 'amsterdam', 'rotterdam'],
-        'uk': ['uk', 'united kingdom', 'england', 'london', 'manchester'],
-        'se': ['sweden', 'stockholm', 'gothenburg'],
-        'us': ['usa', 'us', 'united states', 'america', 'new york', 'california', 'texas'],
-        'ca': ['canada', 'canadian', 'toronto', 'vancouver'],
-        'au': ['australia', 'australian', 'sydney', 'melbourne'],
-        'in': ['india', 'indian', 'delhi', 'mumbai', 'bangalore']
+        'de': ['germany', 'deutschland', 'berlin', 'munich', 'hamburg', 'cologne', 'frankfurt', 'düsseldorf', 'nuremberg', 'stuttgart'],
+        'fr': ['france', 'paris', 'lyon', 'marseille', 'toulouse', 'nice', 'nantes'],
+        'nl': ['netherlands', 'dutch', 'amsterdam', 'rotterdam', 'Utrecht', 'groningen', 'eindhoven'],
+        'uk': ['uk', 'united kingdom', 'england', 'scotland', 'london', 'manchester', 'birmingham', 'bristol', 'leeds', 'edinburgh'],
+        'se': ['sweden', 'stockholm', 'gothenburg', 'gothenburg', 'malmö', 'uppsala'],
+        'us': ['usa', 'us', 'united states', 'america', 'new york', 'california', 'texas', 'florida', 'illinois', 'pennsylvania', 'washington', 'dc', 'los angeles', 'chicago', 'houston', 'phoenix', 'philadelphia', 'san antonio', 'san diego', 'dallas', 'san jose'],
+        'ca': ['canada', 'canadian', 'toronto', 'vancouver', 'calgary', 'ottawa', 'montreal', 'edmonton'],
+        'au': ['australia', 'australian', 'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide'],
+        'in': ['india', 'indian', 'delhi', 'mumbai', 'bangalore', 'henglegarh', 'hyderabad', 'pune', 'kolkata']
       };
       return countryMap[c] || [c];
     }).flat();
     
-    return countryNames.some(country => jobLocationLower.includes(country));
+    // Check if any country name matches
+    for (const country of countryNames) {
+      if (jobLocationLower.includes(country)) return true;
+    }
   }
   
   return false;
