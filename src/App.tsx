@@ -82,7 +82,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'application-materials'>('discover');
+  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'application-materials'>('portfolio');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
