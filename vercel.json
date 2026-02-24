@@ -1,10 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps --verbose && npm run build",
-  "env": {
-    "npm_config_optional": "true",
-    "ROLLUP_WATCH": "false"
-  },
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "builds": [
     {
       "src": "package.json",
