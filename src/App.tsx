@@ -1673,37 +1673,24 @@ export default function App() {
 
 function StatCard({ label, value, icon, color }: { label: string, value: number, icon: React.ReactNode, color: string }) {
   const colors: Record<string, string> = {
-    indigo: 'bg-indigo-50 text-indigo-600 ring-indigo-100',
-    blue: 'bg-blue-50 text-blue-600 ring-blue-100',
-    amber: 'bg-amber-50 text-amber-600 ring-amber-100',
-    emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
+    indigo: 'bg-indigo-100 text-indigo-600',
+    blue: 'bg-blue-100 text-blue-600',
+    amber: 'bg-amber-100 text-amber-600',
+    emerald: 'bg-emerald-100 text-emerald-600',
   };
 
   return (
     <motion.div 
       whileHover={{ y: -6, scale: 1.02 }}
-      className="glass-card p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] transition-all duration-500 group relative overflow-hidden"
+      className="card-stat"
     >
-      <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br from-slate-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className={`p-3 sm:p-4 rounded-lg sm:rounded-2xl ring-4 sm:ring-8 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${colors[color]}`}>
-          <div className="w-5 sm:w-6 h-5 sm:h-6">{icon}</div>
-        </div>
-        <div className="flex gap-1">
-          {[1, 2].map(i => (
-            <div key={i} className="w-1 h-1 rounded-full bg-slate-200" />
-          ))}
-        </div>
+      <div className={`inline-flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${colors[color]}`}>
+        <div className="w-6 h-6">{icon}</div>
       </div>
       
-      <div className="relative">
-        <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter mb-1 group-hover:text-indigo-600 transition-colors">
-          {value}
-        </div>
-        <div className="text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
-          {label}
-        </div>
+      <div className="mt-6">
+        <div className="card-stat-value">{value}</div>
+        <div className="card-stat-label">{label}</div>
       </div>
     </motion.div>
   );

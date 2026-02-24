@@ -100,6 +100,112 @@
   transform: translateY(-2px);
 }
 
+/* Advanced card styles */
+.card-bordered {
+  @apply bg-white rounded-2xl p-6 border border-slate-100/60 shadow-sm transition-all duration-300;
+}
+
+.card-bordered:hover {
+  @apply border-indigo-200/60 shadow-md;
+  box-shadow: 0 15px 30px -10px rgba(79, 91, 231, 0.1);
+}
+
+.card-minimal {
+  @apply bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-white/40 transition-all duration-300;
+}
+
+.card-minimal:hover {
+  @apply bg-white/80 shadow-lg;
+}
+
+.card-gradient {
+  @apply bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl p-6 border border-slate-200/60 shadow-sm transition-all duration-300;
+}
+
+.card-gradient:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+  @apply shadow-lg;
+}
+
+.card-stat {
+  @apply relative bg-white rounded-2xl p-8 shadow-sm border border-slate-100 overflow-hidden;
+}
+
+.card-stat::before {
+  content: '';
+  @apply absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full;
+}
+
+.card-stat:hover {
+  @apply shadow-lg;
+  transform: translateY(-1px);
+}
+
+.card-stat-value {
+  @apply text-5xl font-black text-slate-900 leading-none mb-2;
+}
+
+.card-stat-label {
+  @apply text-xs font-black text-slate-500 uppercase tracking-wider;
+}
+
+.card-stat-change {
+  @apply text-xs font-bold mt-3 inline-flex items-center gap-1;
+}
+
+.card-stat-change.positive {
+  @apply text-emerald-600;
+}
+
+.card-stat-change.negative {
+  @apply text-rose-600;
+}
+
+/* Feature cards */
+.feature-card {
+  @apply bg-white rounded-2xl p-8 border border-slate-100 shadow-sm transition-all duration-300;
+}
+
+.feature-card:hover {
+  @apply border-indigo-200 shadow-xl;
+  box-shadow: 0 20px 25px -5px rgba(79, 91, 231, 0.15);
+  transform: translateY(-4px);
+}
+
+.feature-card-icon {
+  @apply w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 transition-all duration-300;
+}
+
+.feature-card:hover .feature-card-icon {
+  @apply bg-indigo-600 text-white;
+}
+
+.feature-card-title {
+  @apply text-lg font-black text-slate-900 mt-4 mb-2;
+}
+
+.feature-card-description {
+  @apply text-sm text-slate-600 leading-relaxed;
+}
+
+/* Action cards */
+.action-card {
+  @apply bg-white rounded-2xl p-6 border border-slate-200 shadow-sm transition-all duration-300 cursor-pointer;
+}
+
+.action-card:hover {
+  @apply border-indigo-300 shadow-lg;
+  transform: translateY(-2px);
+}
+
+.action-card-content {
+  @apply transition-colors duration-200;
+}
+
+.action-card:hover .action-card-content {
+  @apply text-indigo-600;
+}
+
 /* Button enhancements */
 .btn-primary {
   @apply bg-gradient-to-b from-indigo-600 to-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl transition-all duration-200 relative overflow-hidden;
