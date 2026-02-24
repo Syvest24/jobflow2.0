@@ -47,6 +47,7 @@ import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
 import { AIJobSearch } from './components/AIJobSearch';
+import { RealJobSearch } from './components/RealJobSearch';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
   'Wishlist': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -79,7 +80,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'ai-job-search' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
+  const [view, setView] = useState<'discover' | 'ai-job-search' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -451,6 +452,7 @@ export default function App() {
             <div className="hidden md:flex items-center bg-slate-100/50 p-1 sm:p-1.5 rounded-2xl border border-slate-200/50 mx-4 lg:mx-0">
               {[
                 { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
+                { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
                 { id: 'discover', label: 'Discover', icon: Compass },
                 { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                 { id: 'portfolio', label: 'Portfolio', icon: User },
@@ -535,6 +537,7 @@ export default function App() {
                 <div className="px-4 py-4 space-y-2">
                   {[
                     { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
+                    { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
                     { id: 'discover', label: 'Discover', icon: Compass },
                     { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                     { id: 'portfolio', label: 'Portfolio', icon: User },
@@ -1216,6 +1219,24 @@ export default function App() {
                   location: job.remote,
                   salary: job.salary,
                   notes: `Match: ${job.match}%`
+                });
+                setIsAdding(true);
+              }}
+              isAdmin={isAdmin}
+            />
+          ) : view === 'real-jobs' ? (
+            <RealJobSearch 
+              onSaveJob={(job) => {
+                if (!isAdmin) return setIsLoginOpen(true);
+                setNewJob({
+                  company: job.company,
+                  position: job.title,
+                  status: 'Wishlist',
+                  date_applied: new Date().toISOString().split('T')[0],
+                  link: job.url,
+                  location: job.location,
+                  salary: job.salary,
+                  notes: `Source: ${job.source}`
                 });
                 setIsAdding(true);
               }}

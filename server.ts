@@ -564,6 +564,199 @@ app.post("/api/ai/search-jobs", async (req, res) => {
   }
 });
 
+// Real Job Search - JSearch API (Tier 2)
+app.post("/api/jobs/jsearch", async (req, res) => {
+  const { keywords, location, salary_min, salary_max, job_type, employment_type, page = 1 } = req.body;
+  
+  if (!process.env.JSEARCH_API_KEY) {
+    return res.status(200).json({ jobs: [], source: "jsearch", error: "JSearch API key not configured" });
+  }
+
+  try {
+    const params = new URLSearchParams();
+    if (keywords) params.append("query", keywords);
+    if (location) params.append("location", location);
+    params.append("page", page.toString());
+    params.append("num_pages", "1");
+    params.append("date_posted", "month");
+    if (employment_type) params.append("employment_type", employment_type);
+
+    const response = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+        'x-rapidapi-key': process.env.JSEARCH_API_KEY || '',
+      }
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok || !data.data) {
+      throw new Error('JSearch API error');
+    }
+
+    const jobs = data.data.map((job: any) => ({
+      id: job.job_id,
+      title: job.job_title,
+      company: job.employer_name,
+      location: job.job_location || "Remote",
+      salary: job.job_salary_currency && job.job_salary_min 
+        ? `${job.job_salary_currency} ${job.job_salary_min}-${job.job_salary_max}` 
+        : "Salary not listed",
+      description: job.job_description?.substring(0, 300) || "",
+      url: job.job_apply_link,
+      remote: job.job_is_remote ? "Remote" : "On-site",
+      type: job.job_employment_type || "Full-time",
+      posted: job.job_posted_at_datetime_utc,
+      source: "JSearch"
+    }));
+
+    res.json({ jobs, source: "jsearch", total: data.data.length });
+  } catch (error) {
+    console.error("JSearch error:", error);
+    res.status(500).json({ jobs: [], source: "jsearch", error: "Failed to fetch from JSearch" });
+  }
+});
+
+// Real Job Search - Adzuna API (Tier 2 - Fallback)
+app.post("/api/jobs/adzuna", async (req, res) => {
+  const { keywords, location = "UK", salary_min, salary_max, page = 1 } = req.body;
+  
+  if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_API_KEY) {
+    return res.status(200).json({ jobs: [], source: "adzuna", error: "Adzuna API keys not configured" });
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("app_id", process.env.ADZUNA_APP_ID || "");
+    params.append("app_key", process.env.ADZUNA_API_KEY || "");
+    params.append("results_per_page", "20");
+    params.append("page", page.toString());
+    if (keywords) params.append("what", keywords);
+    if (location) params.append("where", location);
+    if (salary_min) params.append("salary_min", salary_min.toString());
+    if (salary_max) params.append("salary_max", salary_max.toString());
+    params.append("sort_by", "date");
+
+    const countryCode = "gb"; // Default to UK, can be extended
+    const response = await fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?${params}`);
+    const data = await response.json();
+
+    if (!response.ok || !data.results) {
+      throw new Error('Adzuna API error');
+    }
+
+    const jobs = data.results.map((job: any) => ({
+      id: job.id,
+      title: job.title,
+      company: job.company?.display_name || "Unknown",
+      location: job.location?.display_name || "Remote",
+      salary: job.salary_min && job.salary_max 
+        ? `£${job.salary_min}-${job.salary_max}` 
+        : "Salary not listed",
+      description: job.description?.substring(0, 300) || "",
+      url: job.redirect_url,
+      remote: job.location?.display_name?.toLowerCase().includes("remote") ? "Remote" : "On-site",
+      type: job.contract_type || "Full-time",
+      posted: job.created,
+      source: "Adzuna"
+    }));
+
+    res.json({ jobs, source: "adzuna", total: data.count });
+  } catch (error) {
+    console.error("Adzuna error:", error);
+    res.status(500).json({ jobs: [], source: "adzuna", error: "Failed to fetch from Adzuna" });
+  }
+});
+
+// Combined Real Job Search - Tier 2 with smart fallback
+app.post("/api/jobs/search", async (req, res) => {
+  const { keywords, location, salary_min, salary_max, job_type, limit = 10 } = req.body;
+
+  try {
+    // Try JSearch first
+    if (process.env.JSEARCH_API_KEY) {
+      try {
+        const jSearchResponse = await fetch(`https://jsearch.p.rapidapi.com/search?query=${keywords}&location=${location}&num_pages=1`, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+            'x-rapidapi-key': process.env.JSEARCH_API_KEY,
+          }
+        });
+
+        if (jSearchResponse.ok) {
+          const jSearchData = await jSearchResponse.json();
+          const jsearchJobs = jSearchData.data?.map((job: any) => ({
+            id: job.job_id,
+            title: job.job_title,
+            company: job.employer_name,
+            location: job.job_location || "Remote",
+            salary: job.job_salary_min ? `${job.job_salary_currency} ${job.job_salary_min}-${job.job_salary_max}` : "Not listed",
+            description: job.job_description?.substring(0, 300) || "",
+            url: job.job_apply_link,
+            remote: job.job_is_remote ? "Remote" : "On-site",
+            type: job.job_employment_type || "Full-time",
+            posted: job.job_posted_at_datetime_utc,
+            source: "JSearch",
+            match: "92" // Real jobs get high match by default
+          })) || [];
+
+          return res.json({ 
+            jobs: jsearchJobs.slice(0, limit),
+            source: "JSearch",
+            total: jsearchJobs.length 
+          });
+        }
+      } catch (jsearchError) {
+        console.log("JSearch failed, trying Adzuna...");
+      }
+    }
+
+    // Fallback to Adzuna
+    if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_API_KEY) {
+      const adzunaParams = new URLSearchParams();
+      adzunaParams.append("app_id", process.env.ADZUNA_APP_ID);
+      adzunaParams.append("app_key", process.env.ADZUNA_API_KEY);
+      adzunaParams.append("results_per_page", "20");
+      adzunaParams.append("what", keywords);
+      if (location) adzunaParams.append("where", location);
+      adzunaParams.append("sort_by", "date");
+
+      const adzunaResponse = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/1?${adzunaParams}`);
+      if (adzunaResponse.ok) {
+        const adzunaData = await adzunaResponse.json();
+        const adzunaJobs = adzunaData.results?.map((job: any) => ({
+          id: job.id,
+          title: job.title,
+          company: job.company?.display_name || "Unknown",
+          location: job.location?.display_name || "Remote",
+          salary: job.salary_min ? `£${job.salary_min}-${job.salary_max}` : "Not listed",
+          description: job.description?.substring(0, 300) || "",
+          url: job.redirect_url,
+          remote: job.location?.display_name?.toLowerCase().includes("remote") ? "Remote" : "On-site",
+          type: job.contract_type || "Full-time",
+          posted: job.created,
+          source: "Adzuna",
+          match: "88"
+        })) || [];
+
+        return res.json({
+          jobs: adzunaJobs.slice(0, limit),
+          source: "Adzuna",
+          total: adzunaJobs.length
+        });
+      }
+    }
+
+    // If both fail, return empty
+    res.json({ jobs: [], source: "none", error: "No job APIs configured" });
+  } catch (error) {
+    console.error("Job search error:", error);
+    res.status(500).json({ jobs: [], error: "Failed to search jobs" });
+  }
+});
+
 // Cover Letter Templates Routes
 app.get("/api/templates", async (req, res) => {
   if (!db) await connectDB();
