@@ -39,6 +39,9 @@ export function AIJobSearch({ onSaveJob, isAdmin = false }: AIJobSearchProps) {
     setHasSearched(true);
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout on client
+
       const response = await fetch('/api/ai/search-jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,14 +51,27 @@ export function AIJobSearch({ onSaveJob, isAdmin = false }: AIJobSearchProps) {
           job_type: 'Full-time',
           experience_level: experienceLevel,
         }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error('Search failed');
       
       const data = await response.json();
-      setResults(data);
-    } catch (err) {
-      setError('Failed to search for jobs. Please try again.');
+      // Handle both array and { jobs: [] } formats
+      const jobsArray = Array.isArray(data) ? data : (data.jobs || []);
+      setResults(jobsArray);
+      
+      if (jobsArray.length === 0 && !error) {
+        setError('No jobs found. Try different criteria.');
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setError('Search took too long. Please try again with more specific criteria.');
+      } else {
+        setError('Failed to search for jobs. Please try again.');
+      }
       console.error('Search error:', err);
     } finally {
       setIsSearching(false);

@@ -529,41 +529,64 @@ app.post("/api/ai/search-jobs", async (req, res) => {
   const { skills, company_preference, job_type, experience_level } = req.body;
   
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(200).json({ jobs: [] }); // Return empty in mock mode
+    return res.status(200).json([]);
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const model = "gemini-2.0-flash";
-
   const prompt = `Based on these job search criteria, suggest 5 relevant job opportunities:
-  - Skills: ${skills?.join(", ") || "not specified"}
-  - Preferred Companies: ${company_preference || "any"}
+  - Skills: ${skills || "not specified"}
+  - Preferred Companies or Location: ${company_preference || "any"}
   - Job Type: ${job_type || "any"}
   - Experience Level: ${experience_level || "intermediate"}
   
-  For each opportunity, provide:
-  1. Company name
-  2. Job title
-  3. Why it matches their profile
-  4. Estimated salary range (if possible)
-  5. Remote possibility
-  
-  Format as JSON array: { "company": "", "title": "", "match": "", "salary": "", "remote": true/false }`;
+  Respond ONLY with a JSON array, no other text. Each object should have: company, title, match, salary, remote
+  Example format: [{"company":"Google","title":"Backend Engineer","match":"90%","salary":"$150k-$200k","remote":"Yes"}]`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024
+        }
+      }),
+      signal: controller.signal
     });
 
-    const text = response.text;
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    const jobs = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.log("Gemini API error:", errorData);
+      return res.status(200).json([]);
+    }
+
+    const data = await response.json();
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    res.json({ jobs });
-  } catch (error) {
-    console.error("Job search AI error:", error);
-    res.json({ jobs: [] });
+    try {
+      const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
+      const jobs = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      res.json(jobs);
+    } catch (parseError) {
+      console.log("JSON parse error:", parseError);
+      res.status(200).json([]);
+    }
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.log("AI search timeout");
+    } else {
+      console.error("Job search AI error:", error);
+    }
+    res.status(200).json([]);
   }
 });
 
