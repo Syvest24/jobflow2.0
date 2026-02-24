@@ -34,12 +34,16 @@ import {
   FileText,
   Upload,
   Compass,
-  BookmarkPlus
+  BookmarkPlus,
+  Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TagsInput } from "react-tag-input-component";
 import Markdown from 'react-markdown';
-import { Job, JobStatus, NewJob, Portfolio } from './types';
+import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate } from './types';
+import { Analytics } from './components/Analytics';
+import { InterviewPrep } from './components/InterviewPrep';
+import { CoverLetterTemplates } from './components/CoverLetterTemplates';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
   'Wishlist': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -71,7 +75,8 @@ const HighlightText = ({ text, highlight }: { text: string; highlight: string })
 export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
-  const [view, setView] = useState<'discover' | 'tracker' | 'portfolio'>('discover');
+  const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
+  const [view, setView] = useState<'discover' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -85,6 +90,7 @@ export default function App() {
   const [aiResult, setAiResult] = useState('');
   const [aiResultType, setAiResultType] = useState<'cover-letter' | 'resume-tips' | null>(null);
   const [dbStatus, setDbStatus] = useState<{ connected: boolean, hasUrl: boolean } | null>(null);
+  const [isInterviewPrepOpen, setIsInterviewPrepOpen] = useState(false);
 
   const MOCK_DISCOVER_JOBS = [
     { id: 'd1', company: 'Google', position: 'Senior Frontend Engineer', location: 'Mountain View, CA', salary: '$180k - $250k', type: 'Full-time', notes: 'Requires 5+ years React experience.' },
@@ -142,6 +148,7 @@ export default function App() {
   useEffect(() => {
     fetchJobs();
     fetchPortfolio();
+    fetchTemplates();
     checkAuth();
     checkHealth();
   }, []);
@@ -208,6 +215,44 @@ export default function App() {
       setPortfolio(data);
     } catch (err) {
       console.error('Failed to fetch portfolio', err);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/templates');
+      const data = await res.json();
+      setTemplates(data);
+    } catch (err) {
+      console.error('Failed to fetch templates', err);
+    }
+  };
+
+  const handleSaveTemplate = async (template: CoverLetterTemplate) => {
+    if (!isAdmin) return setIsLoginOpen(true);
+    try {
+      const method = template.id.startsWith('template_') ? 'POST' : 'PUT';
+      const url = method === 'POST' ? '/api/templates' : `/api/templates/${template.id}`;
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(template),
+      });
+      if (res.ok) {
+        fetchTemplates();
+      }
+    } catch (err) {
+      console.error('Failed to save template', err);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!isAdmin) return;
+    try {
+      await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+      fetchTemplates();
+    } catch (err) {
+      console.error('Failed to delete template', err);
     }
   };
 
@@ -396,6 +441,27 @@ export default function App() {
                 >
                   <User className="w-4 h-4" />
                   Portfolio
+                </button>
+                <button 
+                  onClick={() => setView('analytics')}
+                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'analytics' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Analytics
+                </button>
+                <button 
+                  onClick={() => setView('interview-prep')}
+                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'interview-prep' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Interview Prep
+                </button>
+                <button 
+                  onClick={() => setView('templates')}
+                  className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${view === 'templates' ? 'text-indigo-600 bg-white shadow-xl shadow-indigo-500/5' : 'text-slate-400 hover:text-slate-900'}`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Templates
                 </button>
               </div>
             </div>
@@ -693,7 +759,7 @@ export default function App() {
                 )}
               </AnimatePresence>
             </motion.div>
-          ) : (
+          ) : view === 'portfolio' ? (
             <motion.div
               key="portfolio-view"
               initial={{ opacity: 0, y: 20 }}
@@ -909,6 +975,20 @@ export default function App() {
                 </div>
               )}
             </motion.div>
+          ) : view === 'analytics' ? (
+            <Analytics jobs={jobs} />
+          ) : view === 'interview-prep' ? (
+            <InterviewPrep />
+          ) : view === 'templates' ? (
+            <CoverLetterTemplates 
+              templates={templates}
+              onSave={handleSaveTemplate}
+              onDelete={handleDeleteTemplate}
+            />
+          ) : (
+            <div className="text-center py-20">
+              <p className="text-slate-400">View not found</p>
+            </div>
           )}
         </AnimatePresence>
       </main>

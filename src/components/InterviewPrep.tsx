@@ -4,19 +4,27 @@ import { motion } from 'motion/react';
 import { Job, InterviewQuestion } from '../types';
 
 interface InterviewPrepProps {
-  selectedJob: Job | null;
-  onClose: () => void;
+  selectedJob?: Job | null;
+  onClose?: () => void;
 }
 
-export function InterviewPrep({ selectedJob, onClose }: InterviewPrepProps) {
+export function InterviewPrep({ selectedJob = null, onClose }: InterviewPrepProps) {
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'technical' | 'behavioral' | 'all'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [companyInput, setCompanyInput] = useState('');
+  const [positionInput, setPositionInput] = useState('');
 
   const generateInterviewQuestions = async () => {
-    if (!selectedJob) return;
+    const company = selectedJob?.company || companyInput;
+    const position = selectedJob?.position || positionInput;
+    
+    if (!company || !position) {
+      alert('Please enter company and position');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -24,9 +32,9 @@ export function InterviewPrep({ selectedJob, onClose }: InterviewPrepProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          company: selectedJob.company,
-          position: selectedJob.position,
-          description: selectedJob.notes || '',
+          company,
+          position,
+          description: selectedJob?.notes || '',
         }),
       });
 
@@ -68,68 +76,96 @@ export function InterviewPrep({ selectedJob, onClose }: InterviewPrepProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      exit={{ opacity: 0, y: -20 }}
+      className="max-w-5xl mx-auto pb-20"
     >
-      <motion.div
-        onClick={e => e.stopPropagation()}
-        className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-      >
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-6 h-6" />
-            <h2 className="text-2xl font-bold">Interview Preparation</h2>
-          </div>
-          {selectedJob && (
-            <p className="text-indigo-100">{selectedJob.company} - {selectedJob.position}</p>
-          )}
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-12 text-white rounded-3xl mb-12 shadow-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <Sparkles className="w-8 h-8" />
+          <h2 className="text-4xl font-black">Interview Preparation</h2>
         </div>
+        <p className="text-indigo-100 text-lg">Get AI-powered interview questions to prepare for your next opportunity</p>
+      </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {questions.length === 0 ? (
-            <div className="text-center py-12">
-              <Sparkles className="w-16 h-16 text-indigo-300 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Questions Generated Yet</h3>
-              <p className="text-slate-600 mb-6">Generate AI-powered interview questions based on the job description</p>
-              <button
-                onClick={generateInterviewQuestions}
-                disabled={loading || !selectedJob}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto"
-              >
-                <Sparkles className="w-5 h-5" />
-                {loading ? 'Generating...' : 'Generate Questions'}
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Tabs */}
-              <div className="flex gap-2 border-b border-slate-200">
-                {['all', 'technical', 'behavioral'].map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab as any)}
-                    className={`px-4 py-2 font-medium capitalize border-b-2 transition-colors ${
-                      activeTab === tab
-                        ? 'border-indigo-600 text-indigo-600'
-                        : 'border-transparent text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+      {/* Content */}
+      <div className="space-y-8">
+        {!selectedJob && (
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-900 mb-6">Enter Job Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Company</label>
+                <input
+                  type="text"
+                  value={companyInput}
+                  onChange={(e) => setCompanyInput(e.target.value)}
+                  placeholder="e.g., Google, Microsoft"
+                  className="w-full px-4 py-3 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
               </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Position</label>
+                <input
+                  type="text"
+                  value={positionInput}
+                  onChange={(e) => setPositionInput(e.target.value)}
+                  placeholder="e.g., Software Engineer"
+                  className="w-full px-4 py-3 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
-              {/* Questions List */}
-              <div className="space-y-3">
-                {filteredQuestions.map((q, idx) => (
-                  <motion.div
-                    key={q.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="border border-slate-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors"
+        {selectedJob && (
+          <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-200">
+            <p className="text-indigo-900 font-semibold">{selectedJob.company} - {selectedJob.position}</p>
+          </div>
+        )}
+
+        {questions.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
+            <Sparkles className="w-16 h-16 text-indigo-300 mx-auto mb-4 opacity-50" />
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">No Questions Generated Yet</h3>
+            <p className="text-slate-600 mb-8 max-w-md mx-auto">Generate AI-powered interview questions based on the job description to prepare for your interview</p>
+            <button
+              onClick={generateInterviewQuestions}
+              disabled={loading || (!selectedJob && !companyInput && !positionInput)}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-8 py-4 rounded-xl font-bold transition-colors flex items-center gap-3 mx-auto text-lg"
+            >
+              <Sparkles className="w-5 h-5" />
+              {loading ? 'Generating...' : 'Generate Questions'}
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl border border-slate-200 p-8">
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-slate-200 mb-8">
+              {['all', 'technical', 'behavioral'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab as any)}
+                  className={`px-6 py-3 font-bold capitalize border-b-2 transition-colors text-sm uppercase tracking-widest ${
+                    activeTab === tab
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Questions List */}
+            <div className="space-y-4">
+              {filteredQuestions.map((q, idx) => (
+                <motion.div
+                  key={q.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 hover:shadow-lg transition-all"
                   >
                     <button
                       onClick={() => setExpandedId(expandedId === q.id ? null : q.id)}
@@ -189,24 +225,13 @@ export function InterviewPrep({ selectedJob, onClose }: InterviewPrepProps) {
               <button
                 onClick={generateInterviewQuestions}
                 disabled={loading}
-                className="w-full bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-900 py-3 rounded-xl font-medium transition-colors"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-4 rounded-xl font-bold transition-colors mt-8"
               >
                 {loading ? 'Regenerating...' : 'Regenerate Questions'}
               </button>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-slate-200 p-4 bg-slate-50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg font-medium transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
+            </div>
+        )}
+      </div>
     </motion.div>
   );
 }

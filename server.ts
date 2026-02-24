@@ -31,13 +31,14 @@ async function connectDB() {
     
     await mongoClient.connect();
     db = mongoClient.db(dbName);
-    console.log("Connected to MongoDB");
+    console.log("✓ Connected to MongoDB");
     return db;
   } catch (err) {
-    console.error("MongoDB connection error:", err);
+    console.log("⚠ MongoDB connection warning:", err instanceof Error ? err.message : err);
+    console.log("💡 Running with mock data mode - features requiring DB will show demo content");
     db = null;
     mongoClient = null;
-    throw err;
+    return null;
   }
 }
 
@@ -123,7 +124,12 @@ app.get("/api/auth/check", (req, res) => {
 
 // Job Routes
 app.get("/api/jobs", async (req, res) => {
-  if (!db) await connectDB();
+  if (!db) {
+    const connected = await connectDB();
+    if (!connected) {
+      return res.json([]); // Return empty array in mock mode
+    }
+  }
   try {
     const jobs = await db.collection("applications").find({}).sort({ created_at: -1 }).toArray();
     res.json(jobs.map((j: any) => ({ ...j, id: j._id.toString() })));
@@ -133,7 +139,12 @@ app.get("/api/jobs", async (req, res) => {
 });
 
 app.post("/api/jobs", authenticateAdmin, async (req, res) => {
-  if (!db) await connectDB();
+  if (!db) {
+    const connected = await connectDB();
+    if (!connected) {
+      return res.status(500).json({ error: "Database not available" });
+    }
+  }
   const job = {
     ...req.body,
     created_at: new Date().toISOString(),
@@ -147,7 +158,12 @@ app.post("/api/jobs", authenticateAdmin, async (req, res) => {
 });
 
 app.put("/api/jobs/:id", authenticateAdmin, async (req, res) => {
-  if (!db) await connectDB();
+  if (!db) {
+    const connected = await connectDB();
+    if (!connected) {
+      return res.status(500).json({ error: "Database not available" });
+    }
+  }
   const { id } = req.params;
   const { id: _, _id: __, ...updates } = req.body;
   try {
