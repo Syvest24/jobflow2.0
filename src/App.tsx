@@ -984,6 +984,8 @@ export default function App() {
               templates={templates}
               onSave={handleSaveTemplate}
               onDelete={handleDeleteTemplate}
+              isAdmin={isAdmin}
+              onLoginRequired={() => setIsLoginOpen(true)}
             />
           ) : (
             <div className="text-center py-20">

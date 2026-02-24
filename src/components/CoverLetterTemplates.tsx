@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Trash2, Eye, Plus, Check, X } from 'lucide-react';
+import { Save, Trash2, Eye, Plus, Check, X, Lock, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 import { CoverLetterTemplate } from '../types';
 
@@ -7,9 +7,11 @@ interface TemplatesProps {
   templates: CoverLetterTemplate[];
   onSave: (template: CoverLetterTemplate) => void;
   onDelete: (id: string) => void;
+  isAdmin?: boolean;
+  onLoginRequired?: () => void;
 }
 
-export function CoverLetterTemplates({ templates, onSave, onDelete }: TemplatesProps) {
+export function CoverLetterTemplates({ templates, onSave, onDelete, isAdmin = false, onLoginRequired }: TemplatesProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newTemplate, setNewTemplate] = useState<Partial<CoverLetterTemplate>>({
@@ -20,6 +22,11 @@ export function CoverLetterTemplates({ templates, onSave, onDelete }: TemplatesP
   const [previewId, setPreviewId] = useState<string | null>(null);
 
   const handleSave = () => {
+    if (!isAdmin) {
+      onLoginRequired?.();
+      return;
+    }
+
     if (!newTemplate.name || !newTemplate.content) {
       alert('Please fill in name and content');
       return;
@@ -41,9 +48,23 @@ export function CoverLetterTemplates({ templates, onSave, onDelete }: TemplatesP
   };
 
   const startEdit = (template: CoverLetterTemplate) => {
+    if (!isAdmin) {
+      onLoginRequired?.();
+      return;
+    }
     setNewTemplate(template);
     setEditingId(template.id);
     setIsCreating(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!isAdmin) {
+      onLoginRequired?.();
+      return;
+    }
+    if (confirm('Are you sure you want to delete this template?')) {
+      onDelete(id);
+    }
   };
 
   const handleCancel = () => {
@@ -52,11 +73,35 @@ export function CoverLetterTemplates({ templates, onSave, onDelete }: TemplatesP
     setEditingId(null);
   };
 
+  if (!isAdmin && templates.length === 0) {
+    return (
+      <div className="max-w-5xl mx-auto pb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl border-2 border-dashed border-indigo-200 p-12 text-center"
+        >
+          <Lock className="w-16 h-16 text-indigo-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">Admin Access Required</h3>
+          <p className="text-slate-600 mb-6 max-w-md mx-auto">
+            Log in with your admin password to create and manage cover letter templates.
+          </p>
+          <p className="text-sm text-slate-500">Click the login icon in the top right corner to get started.</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto pb-20 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Cover Letter Templates</h2>
-        <p className="text-slate-600">Save and reuse your best cover letter formats</p>
+        <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-4 flex items-center gap-4">
+          <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-[1.5rem] flex items-center justify-center">
+            <FileText className="w-8 h-8" />
+          </div>
+          Cover Letter Templates
+        </h2>
+        <p className="text-lg text-slate-400 font-bold uppercase tracking-widest">Save and reuse your best cover letter formats</p>
       </div>
 
       {/* Create/Edit Form */}
@@ -169,9 +214,10 @@ I am writing to express my strong interest in the [Position] role at [Company]..
                   </svg>
                 </button>
                 <button
-                  onClick={() => onDelete(template.id)}
+                  onClick={() => handleDelete(template.id)}
                   className="p-2 hover:bg-rose-50 rounded-lg transition-colors"
                   title="Delete"
+                  disabled={!isAdmin}
                 >
                   <Trash2 className="w-5 h-5 text-rose-600" />
                 </button>

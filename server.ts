@@ -45,6 +45,17 @@ async function connectDB() {
 app.use(express.json());
 app.use(cookieParser());
 
+// Security Headers
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
 // Health Check
 app.get("/api/health", async (req, res) => {
   try {
@@ -301,30 +312,92 @@ app.post("/api/ai/optimize", async (req, res) => {
 });
 
 // Interview Preparation Route
+// Enhanced Interview Prep with structured questions
 app.post("/api/ai/interview-prep", async (req, res) => {
-  const { company, position, description } = req.body;
+  const { company, position, description, skill_level } = req.body;
   
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: "Gemini API key not configured" });
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const model = "gemini-3-flash-preview";
+  const model = "gemini-2.0-flash";
 
-  const prompt = `Generate 10 interview questions for a ${position} role at ${company}. Include both technical and behavioral questions.
-  Job Description: ${description}
+  const skillContext = skill_level ? ` for a ${skill_level} level` : '';
+  const prompt = `Generate 12 interview questions for a ${position} role${skillContext} at ${company}. 
   
-  Format as a numbered list, one question per line.`;
+  Job Description: ${description || 'General role'}
+  
+  Include:
+  - 4 technical questions (specific to the tech stack/role)
+  - 4 behavioral questions (company culture fit, problem-solving)
+  - 4 situational questions (real-world scenarios)
+  
+  For EACH question, provide:
+  1. The question
+  2. Key points the interviewer is looking for
+  3. A sample answer approach
+  
+  Format as JSON array with objects: { "type": "technical|behavioral|situational", "question": "", "keyPoints": "", "answerTip": "" }`;
 
   try {
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
     });
-    res.json({ questions: response.text });
+    
+    const text = response.text;
+    // Extract JSON from markdown code blocks if present
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const questions = jsonMatch ? JSON.parse(jsonMatch[0]) : { questions: text };
+    
+    res.json({ questions });
   } catch (error) {
     console.error("AI Error:", error);
-    res.status(500).json({ error: "Failed to generate interview questions" });
+    res.status(500).json({ error: "Failed to generate interview questions. Please try again." });
+  }
+});
+
+// AI-powered Job Search
+app.post("/api/ai/search-jobs", async (req, res) => {
+  const { skills, company_preference, job_type, experience_level } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(200).json({ jobs: [] }); // Return empty in mock mode
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const model = "gemini-2.0-flash";
+
+  const prompt = `Based on these job search criteria, suggest 5 relevant job opportunities:
+  - Skills: ${skills?.join(", ") || "not specified"}
+  - Preferred Companies: ${company_preference || "any"}
+  - Job Type: ${job_type || "any"}
+  - Experience Level: ${experience_level || "intermediate"}
+  
+  For each opportunity, provide:
+  1. Company name
+  2. Job title
+  3. Why it matches their profile
+  4. Estimated salary range (if possible)
+  5. Remote possibility
+  
+  Format as JSON array: { "company": "", "title": "", "match": "", "salary": "", "remote": true/false }`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+
+    const text = response.text;
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const jobs = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    
+    res.json({ jobs });
+  } catch (error) {
+    console.error("Job search AI error:", error);
+    res.json({ jobs: [] });
   }
 });
 
