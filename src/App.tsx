@@ -557,17 +557,18 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="max-w-7xl mx-auto pb-20"
             >
-              <div className="mb-12">
-                <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-4 flex items-center gap-4">
-                  <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-[1.5rem] flex items-center justify-center">
-                    <Compass className="w-8 h-8" />
+              {/* Discover Hero */}
+              <div className="mb-8 sm:mb-12">
+                <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-4">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 bg-indigo-100 text-indigo-600 rounded-[1rem] sm:rounded-[1.5rem] flex items-center justify-center flex-shrink-0">
+                    <Compass className="w-6 sm:w-8 h-6 sm:h-8" />
                   </div>
-                  Discover Opportunities
+                  <span>Discover Jobs</span>
                 </h2>
-                <p className="text-lg text-slate-400 font-bold uppercase tracking-widest">Find and save jobs to your tracker.</p>
+                <p className="text-base sm:text-lg text-slate-400 font-bold uppercase tracking-widest">Find and save opportunities to your tracker.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {MOCK_DISCOVER_JOBS.filter(job => {
                   const query = searchQuery.toLowerCase();
                   return (
@@ -655,15 +656,15 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
             >
               {/* Hero Section */}
-              <div className="mb-16">
-                <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-4">
+              <div className="mb-8 sm:mb-16">
+                <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 mb-2 sm:mb-4">
                   Welcome back, <span className="text-indigo-600">{portfolio?.name.split(' ')[0] || 'User'}</span>.
                 </h2>
-                <p className="text-lg text-slate-400 font-bold uppercase tracking-widest">You have {jobs.length} active applications.</p>
+                <p className="text-sm sm:text-lg text-slate-400 font-bold uppercase tracking-widest">You have {jobs.length} active applications.</p>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-8 mb-12 sm:mb-20">
                 <StatCard label="Total" value={stats.total} icon={<LayoutGrid className="w-6 h-6" />} color="indigo" />
                 <StatCard label="Applied" value={stats.applied} icon={<Clock className="w-6 h-6" />} color="blue" />
                 <StatCard label="Interviews" value={stats.interviewing} icon={<TrendingUp className="w-6 h-6" />} color="amber" />
@@ -1496,13 +1497,13 @@ function StatCard({ label, value, icon, color }: { label: string, value: number,
   return (
     <motion.div 
       whileHover={{ y: -6, scale: 1.02 }}
-      className="glass-card p-8 rounded-[2.5rem] transition-all duration-500 group relative overflow-hidden"
+      className="glass-card p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] transition-all duration-500 group relative overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-slate-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br from-slate-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
-      <div className="flex items-center justify-between mb-6">
-        <div className={`p-4 rounded-2xl ring-8 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${colors[color]}`}>
-          {icon}
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className={`p-3 sm:p-4 rounded-lg sm:rounded-2xl ring-4 sm:ring-8 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${colors[color]}`}>
+          <div className="w-5 sm:w-6 h-5 sm:h-6">{icon}</div>
         </div>
         <div className="flex gap-1">
           {[1, 2].map(i => (
@@ -1512,10 +1513,10 @@ function StatCard({ label, value, icon, color }: { label: string, value: number,
       </div>
       
       <div className="relative">
-        <div className="text-5xl font-black text-slate-900 tracking-tighter mb-1 group-hover:text-indigo-600 transition-colors">
+        <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter mb-1 group-hover:text-indigo-600 transition-colors">
           {value}
         </div>
-        <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+        <div className="text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
           {label}
         </div>
       </div>
