@@ -1058,6 +1058,107 @@ app.delete("/api/templates/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
+// Generate tailored cover letter
+app.post("/api/generate-cover-letter", async (req, res) => {
+  const { company, position, jobDescription, userSkills } = req.body;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(400).json({ error: "Gemini API not configured" });
+  }
+
+  try {
+    const prompt = `Write a professional, tailored cover letter for the following position:
+Company: ${company}
+Position: ${position}
+Job Description: ${jobDescription || 'Not provided'}
+My Key Skills: ${userSkills || 'Not provided'}
+
+Return ONLY the cover letter text, formatted professionally with paragraphs. Include:
+1. Opening paragraph introducing yourself and the position
+2. Body paragraph highlighting relevant skills and experience
+3. Closing paragraph with call to action
+Do not include any markdown or formatting symbols.`;
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 1500
+        }
+      })
+    });
+
+    if (!response.ok) {
+      return res.status(500).json({ error: "Failed to generate cover letter" });
+    }
+
+    const data = await response.json();
+    const coverLetter = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    res.json({ coverLetter });
+  } catch (error) {
+    console.error("Cover letter generation error:", error);
+    res.status(500).json({ error: "Failed to generate cover letter" });
+  }
+});
+
+// Generate resume tips for specific job
+app.post("/api/generate-resume-tips", async (req, res) => {
+  const { position, description, company, userBackground } = req.body;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(400).json({ error: "Gemini API not configured" });
+  }
+
+  try {
+    const prompt = `Provide 5-7 specific, actionable tips to tailor a resume for this position:
+Position: ${position}
+Company: ${company}
+Job Description: ${description || 'Not provided'}
+Candidate Background: ${userBackground || 'Not provided'}
+
+Format as a JSON array of objects with "tip" and "example" keys.
+Example format: [{"tip": "...", "example": "..."}, ...]
+Return ONLY the JSON array, no other text.`;
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800
+        }
+      })
+    });
+
+    if (!response.ok) {
+      return res.status(500).json({ error: "Failed to generate tips" });
+    }
+
+    const data = await response.json();
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    
+    try {
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+      const tips = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      res.json({ tips });
+    } catch (e) {
+      res.json({ tips: [] });
+    }
+  } catch (error) {
+    console.error("Resume tips generation error:", error);
+    res.status(500).json({ error: "Failed to generate resume tips" });
+  }
+});
+
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
   console.error("Error:", err);

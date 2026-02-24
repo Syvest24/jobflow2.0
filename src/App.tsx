@@ -46,7 +46,7 @@ import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate } from './types'
 import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
-import { AIJobSearch } from './components/AIJobSearch';
+import { UnifiedJobDiscovery } from './components/UnifiedJobDiscovery';
 import { RealJobSearch } from './components/RealJobSearch';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
@@ -80,7 +80,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'ai-job-search' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
+  const [view, setView] = useState<'discover' | 'real-jobs' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -97,46 +97,6 @@ export default function App() {
   const [isInterviewPrepOpen, setIsInterviewPrepOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditingPortfolioInline, setIsEditingPortfolioInline] = useState(false);
-
-  const MOCK_DISCOVER_JOBS = [
-    { id: 'd1', company: 'Google', position: 'Senior Frontend Engineer', location: 'Mountain View, CA', salary: '$180k - $250k', type: 'Full-time', notes: 'Requires 5+ years React experience.' },
-    { id: 'd2', company: 'Stripe', position: 'UI Engineer', location: 'Remote', salary: '$160k - $210k', type: 'Full-time', notes: 'Focus on design systems and accessibility.' },
-    { id: 'd3', company: 'Vercel', position: 'Developer Advocate', location: 'Remote', salary: '$150k - $190k', type: 'Full-time', notes: 'Content creation and community engagement.' },
-    { id: 'd4', company: 'Airbnb', position: 'Staff Software Engineer', location: 'San Francisco, CA', salary: '$200k - $280k', type: 'Full-time', notes: 'Leading core architecture initiatives.' },
-    { id: 'd5', company: 'Spotify', position: 'Web Engineer', location: 'New York, NY', salary: '$140k - $190k', type: 'Full-time', notes: 'Working on the web player experience.' },
-    { id: 'd6', company: 'Netflix', position: 'Senior UI/UX Engineer', location: 'Los Gatos, CA', salary: '$200k - $300k', type: 'Full-time', notes: 'A/B testing and performance optimization.' },
-    { id: 'd7', company: 'Meta', position: 'Frontend Engineer', location: 'Menlo Park, CA', salary: '$170k - $240k', type: 'Full-time', notes: 'React and GraphQL expertise required.' },
-    { id: 'd8', company: 'Amazon', position: 'SDE II', location: 'Seattle, WA', salary: '$160k - $220k', type: 'Full-time', notes: 'AWS experience is a plus.' },
-    { id: 'd9', company: 'Apple', position: 'UI Developer', location: 'Cupertino, CA', salary: '$180k - $260k', type: 'Full-time', notes: 'Focus on pixel-perfect UI and animations.' },
-    { id: 'd10', company: 'Microsoft', position: 'Software Engineer', location: 'Redmond, WA', salary: '$150k - $210k', type: 'Full-time', notes: 'TypeScript and Azure experience.' },
-    { id: 'd11', company: 'Discord', position: 'Product Engineer', location: 'Remote', salary: '$160k - $200k', type: 'Full-time', notes: 'Real-time communication systems.' },
-    { id: 'd12', company: 'Figma', position: 'Software Engineer, Editor', location: 'San Francisco, CA', salary: '$170k - $230k', type: 'Full-time', notes: 'Canvas and WebGL experience.' },
-  ];
-
-  const handleSaveFromDiscover = async (job: typeof MOCK_DISCOVER_JOBS[0]) => {
-    if (!isAdmin) return setIsLoginOpen(true);
-    const newJobData: NewJob = {
-      company: job.company,
-      position: job.position,
-      status: 'Wishlist',
-      date_applied: new Date().toISOString().split('T')[0],
-      location: job.location,
-      salary: job.salary,
-      notes: `Found via Discover tab.\nType: ${job.type}\n${job.notes}`,
-      link: ''
-    };
-    try {
-      await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newJobData),
-      });
-      fetchJobs();
-      alert(`Saved ${job.position} at ${job.company} to your Wishlist!`);
-    } catch (err) {
-      console.error('Failed to save job', err);
-    }
-  };
 
   const [newJob, setNewJob] = useState<NewJob>({
     company: '',
@@ -448,9 +408,8 @@ export default function App() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-1">
               {[
-                { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
+                { id: 'discover', label: 'Discover', icon: Sparkles },
                 { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
-                { id: 'discover', label: 'Discover', icon: Compass },
                 { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                 { id: 'portfolio', label: 'Portfolio', icon: User },
                 { id: 'analytics', label: 'Analytics', icon: TrendingUp },
@@ -531,9 +490,8 @@ export default function App() {
               >
                 <div className="px-4 py-3 space-y-1">
                   {[
-                    { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
+                    { id: 'discover', label: 'Discover', icon: Sparkles },
                     { id: 'real-jobs', label: 'Real Jobs', icon: Globe },
-                    { id: 'discover', label: 'Discover', icon: Compass },
                     { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                     { id: 'portfolio', label: 'Portfolio', icon: User },
                     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
@@ -574,104 +532,23 @@ export default function App() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
         <AnimatePresence mode="wait">
           {view === 'discover' ? (
-            <motion.div
-              key="discover-view"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="max-w-7xl mx-auto pb-20"
-            >
-              {/* Discover Hero */}
-              <div className="mb-8 sm:mb-12">
-                <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-4">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 bg-indigo-100 text-indigo-600 rounded-[1rem] sm:rounded-[1.5rem] flex items-center justify-center flex-shrink-0">
-                    <Compass className="w-6 sm:w-8 h-6 sm:h-8" />
-                  </div>
-                  <span>Discover Jobs</span>
-                </h2>
-                <p className="text-base sm:text-lg text-slate-400 font-bold uppercase tracking-widest">Find and save opportunities to your tracker.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {MOCK_DISCOVER_JOBS.filter(job => {
-                  const query = searchQuery.toLowerCase();
-                  return (
-                    job.company.toLowerCase().includes(query) || 
-                    job.position.toLowerCase().includes(query) ||
-                    job.location.toLowerCase().includes(query) ||
-                    job.type.toLowerCase().includes(query) ||
-                    job.notes.toLowerCase().includes(query)
-                  );
-                }).map((job) => (
-                  <motion.div 
-                    key={job.id}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group relative overflow-hidden flex flex-col h-full cursor-pointer"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                          <HighlightText text={job.company} highlight={searchQuery} />
-                        </h3>
-                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                          <HighlightText text={job.type} highlight={searchQuery} />
-                        </span>
-                      </div>
-                      <div className="text-lg text-indigo-600 font-bold mb-6">
-                        <HighlightText text={job.position} highlight={searchQuery} />
-                      </div>
-                      
-                      <div className="space-y-3 mb-8">
-                        <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
-                          <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                            <MapPin className="w-4 h-4 text-slate-400" />
-                          </div>
-                          <HighlightText text={job.location} highlight={searchQuery} />
-                        </div>
-                        <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
-                          <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                            <DollarSign className="w-4 h-4 text-slate-400" />
-                          </div>
-                          {job.salary}
-                        </div>
-                      </div>
-                      <div className="text-sm text-slate-600 mb-8 line-clamp-3">
-                        <HighlightText text={job.notes} highlight={searchQuery} />
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSaveFromDiscover(job);
-                      }}
-                      className="w-full py-4 bg-slate-50 text-slate-600 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-indigo-200"
-                    >
-                      <BookmarkPlus className="w-5 h-5" />
-                      Save to Tracker
-                    </button>
-                  </motion.div>
-                ))}
-                {MOCK_DISCOVER_JOBS.filter(job => {
-                  const query = searchQuery.toLowerCase();
-                  return (
-                    job.company.toLowerCase().includes(query) || 
-                    job.position.toLowerCase().includes(query) ||
-                    job.location.toLowerCase().includes(query) ||
-                    job.type.toLowerCase().includes(query) ||
-                    job.notes.toLowerCase().includes(query)
-                  );
-                }).length === 0 && (
-                  <div className="col-span-full py-20 text-center">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Search className="w-8 h-8 text-slate-300" />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-2">No jobs found</h3>
-                    <p className="text-slate-500 font-bold">Try adjusting your search query.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+            <UnifiedJobDiscovery 
+              onSaveJob={(job) => {
+                if (!isAdmin) return setIsLoginOpen(true);
+                setNewJob({
+                  company: job.company,
+                  position: job.position || job.title,
+                  status: 'Wishlist',
+                  date_applied: new Date().toISOString().split('T')[0],
+                  link: '',
+                  location: job.location || job.remote,
+                  salary: job.salary,
+                  notes: `Match: ${job.match || 'Discovered'}%`
+                });
+                setIsAdding(true);
+              }}
+              isAdmin={isAdmin}
+            />
           ) : view === 'tracker' ? (
             <motion.div
               key="tracker-view"
@@ -1201,24 +1078,6 @@ export default function App() {
                 </div>
               )}
             </motion.div>
-          ) : view === 'ai-job-search' ? (
-            <AIJobSearch 
-              onSaveJob={(job) => {
-                if (!isAdmin) return setIsLoginOpen(true);
-                setNewJob({
-                  company: job.company,
-                  position: job.title,
-                  status: 'Wishlist',
-                  date_applied: new Date().toISOString().split('T')[0],
-                  link: '',
-                  location: job.remote,
-                  salary: job.salary,
-                  notes: `Match: ${job.match}%`
-                });
-                setIsAdding(true);
-              }}
-              isAdmin={isAdmin}
-            />
           ) : view === 'real-jobs' ? (
             <RealJobSearch 
               onSaveJob={(job) => {
