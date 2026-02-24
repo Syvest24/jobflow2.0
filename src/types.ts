@@ -70,5 +70,21 @@ export interface InterviewQuestion {
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
   job_id?: string;
+  type?: 'technical' | 'behavioral' | 'situational';
+  keyPoints?: string;
+  answerTip?: string;
+  followUpQuestions?: string[];
+  bookmarked?: boolean;
+  confidenceLevel?: number; // 0-100
+  practiced?: boolean;
+  userAnswer?: string;
+}
+
+export interface InterviewEvaluation {
+  score: number; // 0-100
+  strengths: string[];
+  improvements: string[];
+  detailedFeedback: string;
+  suggestedAnswer?: string;
 }
 

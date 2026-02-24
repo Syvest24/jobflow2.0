@@ -524,6 +524,122 @@ app.post("/api/ai/interview-prep", async (req, res) => {
   }
 });
 
+// Evaluate user's interview answer
+app.post("/api/ai/interview-evaluation", async (req, res) => {
+  const { question, userAnswer, suggestedAnswer, position, company } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Gemini API key not configured" });
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const model = "gemini-2.0-flash";
+
+  const prompt = `Evaluate this interview answer for a ${position} role at ${company}.
+
+Question: ${question}
+
+User's Answer: ${userAnswer}
+
+Suggested/Model Answer: ${suggestedAnswer || 'Not provided'}
+
+Please evaluate the answer and provide:
+1. Score (0-100)
+2. 3-4 key strengths
+3. 2-3 areas for improvement
+4. Detailed feedback (2-3 sentences)
+5. Tips for a better answer (if needed)
+
+RESPOND ONLY with valid JSON in this exact format:
+{
+  "score": 85,
+  "strengths": ["point1", "point2"],
+  "improvements": ["point1", "point2"],
+  "detailedFeedback": "Your answer...",
+  "tips": "Tips for better answer..."
+}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+    
+    const text = response.text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const evaluation = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
+      score: 70, 
+      strengths: ["Good effort"],
+      improvements: ["Could be more detailed"],
+      detailedFeedback: "Your answer was reasonable.",
+      tips: "Try to add more specific examples."
+    };
+    
+    res.json(evaluation);
+  } catch (error) {
+    console.error("Evaluation Error:", error);
+    res.status(500).json({ error: "Failed to evaluate answer. Please try again." });
+  }
+});
+
+// Get company-specific interview insights
+app.post("/api/ai/company-interview-insights", async (req, res) => {
+  const { company, position } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Gemini API key not configured" });
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const model = "gemini-2.0-flash";
+
+  const prompt = `Provide interview insights for ${position} role at ${company}.
+
+Include:
+1. Company interview format (phone screen, technical rounds, behavioral rounds, etc.)
+2. 3-4 common questions asked
+3. Top 3-4 skills they value
+4. Interview tips specific to this company/role
+5. Typical timeline
+6. Salary range estimate
+7. Company culture fit indicators
+
+RESPOND ONLY with valid JSON:
+{
+  "format": "Description of interview process",
+  "commonQuestions": ["Q1", "Q2"],
+  "valuedSkills": ["Skill1", "Skill2"],
+  "interviewTips": "Tips for success",
+  "timeline": "Typical timeline",
+  "salaryRange": "$X - $Y",
+  "cultureIndicators": "What they value culturally"
+}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+    
+    const text = response.text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const insights = jsonMatch ? JSON.parse(jsonMatch[0]) : {
+      format: "Typically multi-stage interview process",
+      commonQuestions: ["Tell me about yourself", "Why do you want to join?"],
+      valuedSkills: ["Technical expertise", "Communication", "Problem-solving"],
+      interviewTips: "Research the company well, prepare specific examples.",
+      timeline: "Usually 2-4 weeks from first interview to offer",
+      salaryRange: "Depends on experience level",
+      cultureIndicators: "Innovation, collaboration, growth mindset"
+    };
+    
+    res.json(insights);
+  } catch (error) {
+    console.error("Insights Error:", error);
+    res.status(500).json({ error: "Failed to get company insights. Please try again." });
+  }
+});
+
 // AI-powered Job Search
 app.post("/api/ai/search-jobs", async (req, res) => {
   const { skills, company_preference, job_type, experience_level } = req.body;
