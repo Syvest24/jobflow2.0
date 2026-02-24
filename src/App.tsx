@@ -46,6 +46,7 @@ import { Job, JobStatus, NewJob, Portfolio, CoverLetterTemplate } from './types'
 import { Analytics } from './components/Analytics';
 import { InterviewPrep } from './components/InterviewPrep';
 import { CoverLetterTemplates } from './components/CoverLetterTemplates';
+import { AIJobSearch } from './components/AIJobSearch';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
   'Wishlist': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -78,7 +79,7 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [templates, setTemplates] = useState<CoverLetterTemplate[]>([]);
-  const [view, setView] = useState<'discover' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
+  const [view, setView] = useState<'discover' | 'ai-job-search' | 'tracker' | 'portfolio' | 'analytics' | 'interview-prep' | 'templates'>('discover');
   const [trackerLayout, setTrackerLayout] = useState<'board' | 'list'>('board');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditingPortfolio, setIsEditingPortfolio] = useState(false);
@@ -449,6 +450,7 @@ export default function App() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center bg-slate-100/50 p-1 sm:p-1.5 rounded-2xl border border-slate-200/50 mx-4 lg:mx-0">
               {[
+                { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
                 { id: 'discover', label: 'Discover', icon: Compass },
                 { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                 { id: 'portfolio', label: 'Portfolio', icon: User },
@@ -532,6 +534,7 @@ export default function App() {
               >
                 <div className="px-4 py-4 space-y-2">
                   {[
+                    { id: 'ai-job-search', label: 'AI Search', icon: Sparkles },
                     { id: 'discover', label: 'Discover', icon: Compass },
                     { id: 'tracker', label: 'Tracker', icon: LayoutGrid },
                     { id: 'portfolio', label: 'Portfolio', icon: User },
@@ -1200,6 +1203,24 @@ export default function App() {
                 </div>
               )}
             </motion.div>
+          ) : view === 'ai-job-search' ? (
+            <AIJobSearch 
+              onSaveJob={(job) => {
+                if (!isAdmin) return setIsLoginOpen(true);
+                setNewJob({
+                  company: job.company,
+                  position: job.title,
+                  status: 'Wishlist',
+                  date_applied: new Date().toISOString().split('T')[0],
+                  link: '',
+                  location: job.remote,
+                  salary: job.salary,
+                  notes: `Match: ${job.match}%`
+                });
+                setIsAdding(true);
+              }}
+              isAdmin={isAdmin}
+            />
           ) : view === 'analytics' ? (
             <Analytics jobs={jobs} />
           ) : view === 'interview-prep' ? (
