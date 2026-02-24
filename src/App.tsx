@@ -368,6 +368,28 @@ export default function App() {
     }
   };
 
+  const handleUpdateJob = async (job: Job) => {
+    if (!isAdmin) return setIsLoginOpen(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job),
+      });
+      if (res.ok) {
+        fetchJobs();
+        if (selectedJob?.id === job.id) {
+          setSelectedJob(job);
+        }
+      } else {
+        alert('Failed to update job');
+      }
+    } catch (err) {
+      console.error('Failed to update job', err);
+      alert('Error updating job');
+    }
+  };
+
   const handleAiOptimize = async (type: 'cover-letter' | 'resume-tips', jobDescription: string) => {
     setAiLoading(true);
     setAiResult('');
@@ -725,6 +747,7 @@ export default function App() {
                         searchQuery={searchQuery}
                         onDelete={handleDeleteJob}
                         onStatusChange={handleUpdateStatus}
+                        onUpdateJob={handleUpdateJob}
                         onAiOptimize={handleAiOptimize}
                         onSelectJob={setSelectedJob}
                       />
@@ -1530,9 +1553,10 @@ const BoardColumn: React.FC<{
   searchQuery: string,
   onDelete: (id: string) => void,
   onStatusChange: (id: string, status: JobStatus) => void,
+  onUpdateJob: (job: Job) => void,
   onAiOptimize: (type: 'cover-letter' | 'resume-tips', desc: string) => void,
   onSelectJob: (job: Job) => void
-}> = ({ status, jobs, searchQuery, onDelete, onStatusChange, onAiOptimize, onSelectJob }) => {
+}> = ({ status, jobs, searchQuery, onDelete, onStatusChange, onUpdateJob, onAiOptimize, onSelectJob }) => {
   const statusColors: Record<JobStatus, string> = {
     'Wishlist': 'bg-slate-400',
     'Applied': 'bg-blue-500',
@@ -1561,6 +1585,7 @@ const BoardColumn: React.FC<{
             searchQuery={searchQuery}
             onDelete={onDelete} 
             onStatusChange={onStatusChange}
+            onUpdateJob={onUpdateJob}
             onAiOptimize={onAiOptimize}
             onSelectJob={onSelectJob}
           />
@@ -1583,10 +1608,136 @@ const JobCard: React.FC<{
   searchQuery: string,
   onDelete: (id: string) => void, 
   onStatusChange: (id: string, status: JobStatus) => void,
+  onUpdateJob: (job: Job) => void,
   onAiOptimize: (type: 'cover-letter' | 'resume-tips', desc: string) => void,
   onSelectJob: (job: Job) => void
-}> = ({ job, searchQuery, onDelete, onStatusChange, onAiOptimize, onSelectJob }) => {
+}> = ({ job, searchQuery, onDelete, onStatusChange, onUpdateJob, onAiOptimize, onSelectJob }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedJob, setEditedJob] = useState<Job>(job);
+
+  const handleSaveEdit = () => {
+    onUpdateJob(editedJob);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedJob(job);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <motion.div 
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-6 rounded-[2rem] border border-indigo-300 shadow-lg relative overflow-hidden ring-2 ring-indigo-200"
+      >
+        <div className={`absolute top-0 left-0 w-1 h-full ${
+          editedJob.status === 'Offer' ? 'bg-emerald-500' : 
+          editedJob.status === 'Rejected' ? 'bg-rose-500' : 
+          editedJob.status === 'Interviewing' ? 'bg-amber-500' : 
+          editedJob.status === 'Applied' ? 'bg-blue-500' : 'bg-slate-300'
+        }`} />
+
+        <div className="mb-4">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4">Editing Job</h3>
+          
+          <div className="space-y-4">
+            {/* Company */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Company</label>
+              <input 
+                type="text"
+                value={editedJob.company}
+                onChange={(e) => setEditedJob({ ...editedJob, company: e.target.value })}
+                className="form-input"
+                placeholder="Company name"
+              />
+            </div>
+
+            {/* Position */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Position</label>
+              <input 
+                type="text"
+                value={editedJob.position}
+                onChange={(e) => setEditedJob({ ...editedJob, position: e.target.value })}
+                className="form-input"
+                placeholder="Job position"
+              />
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Location</label>
+              <input 
+                type="text"
+                value={editedJob.location}
+                onChange={(e) => setEditedJob({ ...editedJob, location: e.target.value })}
+                className="form-input"
+                placeholder="City, State"
+              />
+            </div>
+
+            {/* Salary */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Salary</label>
+              <input 
+                type="text"
+                value={editedJob.salary}
+                onChange={(e) => setEditedJob({ ...editedJob, salary: e.target.value })}
+                className="form-input"
+                placeholder="e.g., $100k - $150k"
+              />
+            </div>
+
+            {/* Link */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Link</label>
+              <input 
+                type="url"
+                value={editedJob.link}
+                onChange={(e) => setEditedJob({ ...editedJob, link: e.target.value })}
+                className="form-input"
+                placeholder="https://example.com"
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Notes</label>
+              <textarea 
+                value={editedJob.notes}
+                onChange={(e) => setEditedJob({ ...editedJob, notes: e.target.value })}
+                className="form-textarea"
+                placeholder="Add notes..."
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6">
+            <button 
+              onClick={handleSaveEdit}
+              className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all"
+            >
+              <CheckCircle2 className="w-4 h-4 inline mr-2" />
+              Save Changes
+            </button>
+            <button 
+              onClick={handleCancelEdit}
+              className="flex-1 bg-slate-200 text-slate-900 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-300 transition-all"
+            >
+              <XCircle className="w-4 h-4 inline mr-2" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div 
@@ -1649,6 +1800,13 @@ const JobCard: React.FC<{
                     </button>
                   ))}
                   <div className="h-px bg-slate-100 my-2 mx-2" />
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); setShowMenu(false); }}
+                    className="w-full text-left px-4 py-2.5 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center gap-2 font-black uppercase tracking-wider"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onDelete(job.id); setShowMenu(false); }}
                     className="w-full text-left px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 font-black uppercase tracking-wider"

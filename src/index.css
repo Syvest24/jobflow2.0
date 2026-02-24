@@ -10,9 +10,10 @@
     --font-display: "Outfit", sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
     
+    /* Enhanced color palette with better contrast */
     --color-indigo-50: #f5f7ff;
     --color-indigo-100: #ebf0fe;
-    --color-indigo-200: #dae3fd;
+    --color-indigo-200: #d9e6fd;
     --color-indigo-300: #bccaf9;
     --color-indigo-400: #93a6f4;
     --color-indigo-500: #6a7df0;
@@ -22,7 +23,7 @@
     --color-indigo-900: #33378d;
     --color-indigo-950: #1e2053;
 
-    --color-slate-50: #f8fafc;
+    --color-slate-50: #fafbfc;
     --color-slate-100: #f1f5f9;
     --color-slate-200: #e2e8f0;
     --color-slate-300: #cbd5e1;
@@ -33,6 +34,16 @@
     --color-slate-800: #1e293b;
     --color-slate-900: #0f172a;
     --color-slate-950: #020617;
+    
+    /* Shadow system */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    --shadow-elevate: 0 15px 30px -10px rgba(79, 91, 231, 0.2);
+    --shadow-card: 0 8px 16px -2px rgba(15, 23, 42, 0.08);
   }
 }
 
@@ -48,7 +59,157 @@
 }
 
 .glass-card {
-  @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl shadow-slate-200/40;
+  @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl shadow-slate-200/30;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  @apply shadow-2xl shadow-slate-200/50;
+  transform: translateY(-2px);
+}
+
+/* Enhanced card styles */
+.card-elegant {
+  @apply bg-white rounded-[2rem] border border-slate-100 shadow-md;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-elegant:hover {
+  @apply border-indigo-200 shadow-xl;
+  box-shadow: 0 20px 25px -5px rgba(79, 91, 231, 0.15);
+}
+
+.card-interactive {
+  @apply cursor-pointer bg-white rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-300;
+}
+
+.card-interactive:hover {
+  @apply border-indigo-300 shadow-lg;
+  box-shadow: 0 15px 30px -10px rgba(79, 91, 231, 0.2);
+  transform: translateY(-4px);
+}
+
+.card-elevated {
+  @apply bg-white rounded-2xl p-6 shadow-lg;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Button enhancements */
+.btn-primary {
+  @apply bg-gradient-to-b from-indigo-600 to-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl transition-all duration-200;
+  box-shadow: 0 10px 15px -3px rgba(79, 91, 231, 0.2);
+}
+
+.btn-primary:hover {
+  @apply from-indigo-700 to-indigo-800;
+  box-shadow: 0 20px 25px -5px rgba(79, 91, 231, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 10px -3px rgba(79, 91, 231, 0.2);
+}
+
+.btn-secondary {
+  @apply bg-slate-100 text-slate-900 font-bold uppercase tracking-wider rounded-xl transition-all duration-200;
+}
+
+.btn-secondary:hover {
+  @apply bg-slate-200 text-slate-900;
+}
+
+/* Status badges with better contrast */
+.badge-status {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border font-semibold transition-all duration-200;
+}
+
+.badge-wishlist {
+  @apply bg-slate-50 text-slate-700 border-slate-300;
+}
+
+.badge-applied {
+  @apply bg-blue-50 text-blue-700 border-blue-300;
+}
+
+.badge-interviewing {
+  @apply bg-amber-50 text-amber-700 border-amber-300;
+}
+
+.badge-offer {
+  @apply bg-emerald-50 text-emerald-700 border-emerald-300;
+}
+
+.badge-rejected {
+  @apply bg-rose-50 text-rose-700 border-rose-300;
+}
+
+/* Input enhancements */
+.input-modern {
+  @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200;
+}
+
+.input-modern:focus {
+  background-color: rgba(245, 247, 255, 0.8);
+}
+
+/* Animation utilities */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(79, 91, 231, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(79, 91, 231, 0);
+  }
+}
+
+.animate-in-slide-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-in-slide-down {
+  animation: slideInDown 0.3s ease-out;
+}
+
+.animate-in-scale {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
 }
 
 .bento-grid {
@@ -87,7 +248,112 @@
 }
 
 .kanban-column {
-  @apply flex flex-col gap-4 min-w-[320px] bg-slate-100/40 p-4 rounded-[2rem] border border-slate-200/50;
+  @apply bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl p-6 min-h-96 border border-slate-200/60 transition-all duration-300 flex flex-col gap-4;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.kanban-column:hover {
+  @apply border-indigo-300/50 shadow-lg;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+.kanban-column-header {
+  @apply flex items-center justify-between mb-6 pb-4 border-b border-slate-200/60;
+}
+
+.kanban-column-title {
+  @apply text-lg font-black text-slate-900 uppercase tracking-wider;
+}
+
+.kanban-column-count {
+  @apply inline-flex items-center justify-center w-9 h-9 bg-indigo-100 text-indigo-700 rounded-full text-sm font-bold;
+}
+
+/* Job card styling */
+.job-card {
+  @apply bg-white rounded-2xl p-6 mb-4 border border-slate-100/80 shadow-sm transition-all duration-300 cursor-grabbing;
+}
+
+.job-card:hover {
+  @apply border-indigo-200 shadow-lg;
+  box-shadow: 0 15px 30px -10px rgba(79, 91, 231, 0.15);
+  transform: translateY(-2px);
+}
+
+.job-card-header {
+  @apply flex items-start justify-between mb-3 pb-3 border-b border-slate-100/60;
+}
+
+.job-card-title {
+  @apply text-lg font-bold text-slate-900 leading-snug;
+}
+
+.job-card-subtitle {
+  @apply text-sm text-slate-600 font-medium;
+}
+
+.job-card-meta {
+  @apply grid grid-cols-2 gap-3 text-xs text-slate-600 mb-4;
+}
+
+.job-card-meta-item {
+  @apply flex items-center gap-2 font-medium;
+}
+
+/* Form styling */
+.form-group {
+  @apply mb-6;
+}
+
+.form-label {
+  @apply block text-sm font-black uppercase tracking-wider text-slate-900 mb-2;
+}
+
+.form-input {
+  @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-200 font-medium;
+}
+
+.form-textarea {
+  @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-200 font-medium resize;
+  min-height: 120px;
+}
+
+.form-select {
+  @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-200 font-medium cursor-pointer;
+}
+
+/* Text utilities */
+.text-gradient {
+  @apply bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent;
+}
+
+.text-gradient-hover {
+  @apply transition-all duration-300;
+}
+
+.text-gradient-hover:hover {
+  background-image: linear-gradient(to right, #4f5be7, #3730a3);
+}
+
+/* Badge animations */
+.badge-pulse {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 rounded-lg;
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Modern Tag Input Overrides */
